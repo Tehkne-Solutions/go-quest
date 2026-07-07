@@ -1,0 +1,215 @@
+.camera-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.camera-button {
+  border: 1px solid rgba(242, 199, 110, 0.28);
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: var(--gold);
+  background: rgba(14, 10, 6, 0.72);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.camera-button--active {
+  color: #1b1208;
+  background: linear-gradient(180deg, #ffd783, #b98134);
+}
+
+.board-stage {
+  width: min(100%, 620px);
+  margin: 0 auto;
+  perspective: 1100px;
+  perspective-origin: 50% 30%;
+  transition: perspective-origin 360ms ease;
+}
+
+.board-stage .board-grid {
+  transform-style: preserve-3d;
+  transition: transform 420ms ease, box-shadow 420ms ease, filter 420ms ease;
+}
+
+.board-stage--top .board-grid {
+  transform: rotateX(0deg) rotateZ(0deg) scale(1);
+}
+
+.board-stage--iso .board-grid {
+  transform: rotateX(56deg) rotateZ(-38deg) scale(0.86);
+  box-shadow: 0 42px 80px rgba(0, 0, 0, 0.55), 0 16px 0 #4f3019;
+}
+
+.board-stage--cinematic {
+  perspective-origin: 50% 5%;
+}
+
+.board-stage--cinematic .board-grid {
+  transform: rotateX(68deg) rotateZ(-18deg) scale(0.82) translateY(18px);
+  filter: saturate(1.14) contrast(1.06);
+  box-shadow: 0 54px 92px rgba(0, 0, 0, 0.65), 0 20px 0 #4a2d18;
+}
+
+.board-stage--rotated .board-grid {
+  transform: rotateX(55deg) rotateZ(42deg) scale(0.86);
+  box-shadow: 0 42px 80px rgba(0, 0, 0, 0.55), 0 16px 0 #4f3019;
+}
+
+.board-grid::before {
+  content: "";
+  position: absolute;
+  inset: -18px;
+  border: 2px solid rgba(242, 199, 110, 0.28);
+  border-radius: 30px;
+  pointer-events: none;
+  transform: translateZ(-16px);
+  background: linear-gradient(135deg, rgba(41, 32, 25, 0.55), rgba(8, 8, 12, 0.2));
+}
+
+.board-grid::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 224, 147, 0.14), transparent 34%), radial-gradient(circle at 70% 70%, rgba(87, 173, 255, 0.1), transparent 38%);
+  pointer-events: none;
+}
+
+.board-cell {
+  transform-style: preserve-3d;
+}
+
+.camp-marker {
+  position: absolute;
+  z-index: 1;
+  bottom: 12%;
+  width: 44%;
+  height: 18%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(242, 199, 110, 0.5), transparent 68%);
+  transform: translateZ(3px);
+  pointer-events: none;
+}
+
+.board-cell--formation .intersection {
+  background: rgba(119, 214, 141, 0.85);
+  box-shadow: 0 0 16px rgba(119, 214, 141, 0.7);
+}
+
+.stone--unit {
+  animation: unitDrop 420ms cubic-bezier(0.2, 0.9, 0.2, 1), unitIdle 2.2s ease-in-out 420ms infinite;
+  transform-origin: 50% 80%;
+}
+
+.stone--formation {
+  filter: drop-shadow(0 0 16px rgba(242, 199, 110, 0.42));
+}
+
+.unit-shadow,
+.unit-aura,
+.stone-unit-head,
+.stone-unit-body,
+.stone-unit-weapon,
+.stone-unit-initial {
+  position: absolute;
+  display: block;
+}
+
+.unit-shadow {
+  z-index: 0;
+  bottom: 0;
+  width: 86%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.38);
+  filter: blur(3px);
+}
+
+.unit-aura {
+  z-index: 1;
+  bottom: 4%;
+  width: 82%;
+  height: 50%;
+  border-radius: 50%;
+  opacity: 0.42;
+  background: radial-gradient(circle, rgba(128, 191, 255, 0.35), transparent 65%);
+}
+
+.stone-unit-head {
+  z-index: 5;
+  top: 2%;
+  width: 42%;
+  height: 32%;
+  border-radius: 50% 50% 42% 42%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+}
+
+.stone-unit-body {
+  z-index: 4;
+  bottom: 10%;
+  width: 72%;
+  height: 58%;
+  border-radius: 42% 42% 18% 18%;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+.stone-unit-weapon {
+  z-index: 6;
+  right: 4%;
+  top: 34%;
+  color: var(--gold);
+  font-size: 1rem;
+  font-weight: 900;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+
+.stone-unit-initial {
+  z-index: 7;
+  top: 45%;
+  color: #fff3c5;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
+}
+
+.unit-role-scout .unit-aura { background: radial-gradient(circle, rgba(99, 214, 113, 0.42), transparent 65%); }
+.unit-role-hunter .unit-aura { background: radial-gradient(circle, rgba(255, 167, 84, 0.42), transparent 65%); }
+.unit-role-guard .unit-aura { background: radial-gradient(circle, rgba(128, 191, 255, 0.42), transparent 65%); }
+.unit-role-link .unit-aura { background: radial-gradient(circle, rgba(186, 118, 255, 0.48), transparent 65%); }
+.unit-role-builder .unit-aura { background: radial-gradient(circle, rgba(242, 199, 110, 0.45), transparent 65%); }
+.unit-role-raider .unit-aura { background: radial-gradient(circle, rgba(255, 91, 91, 0.44), transparent 65%); }
+
+.stone--black .stone-unit-head { background: linear-gradient(145deg, #5f6470, #171a22); }
+.stone--black .stone-unit-body { background: linear-gradient(145deg, #252b38, #05070b); }
+.stone--white .stone-unit-head { background: linear-gradient(145deg, #f8f7ef, #aaa68d); }
+.stone--white .stone-unit-body { background: linear-gradient(145deg, #e9e7da, #8e8b7a); }
+
+.board-header-actions {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+@keyframes unitDrop {
+  from { opacity: 0; transform: translateY(-18px) scale(0.7); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes unitIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@media (max-width: 820px) {
+  .board-stage--iso .board-grid,
+  .board-stage--cinematic .board-grid,
+  .board-stage--rotated .board-grid {
+    transform: rotateX(0deg) rotateZ(0deg) scale(1);
+  }
+
+  .camera-controls {
+    justify-content: flex-start;
+  }
+}
