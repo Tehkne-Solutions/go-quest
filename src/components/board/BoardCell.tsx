@@ -18,7 +18,7 @@ export function BoardCell({ cell, isExpected = false, onClick }: BoardCellProps)
       aria-label={`Casa x:${cell.position.x}, y:${cell.position.y}`}
     >
       <span className="intersection" />
-      {!isEmpty && <StoneView color={cell.state} />}
+      {!isEmpty && <StoneView color={cell.state} character={cell.character} />}
     </button>
   );
 }
