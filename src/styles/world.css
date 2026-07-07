@@ -1,3 +1,5 @@
+@import "./game-ui.css";
+
 .stone--unit {
   height: clamp(48px, 9vw, 82px);
   border-radius: 36% 36% 18% 18%;
