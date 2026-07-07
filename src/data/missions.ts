@@ -18,30 +18,30 @@ export type Mission = {
 export const missions: Mission[] = [
   {
     id: "breath",
-    title: "A Pedra Precisa Respirar",
+    title: "O Primeiro Batedor",
     concept: "Liberdades",
     player: "BLACK",
     intro:
-      "Coloque uma pedra no centro do tabuleiro e observe como ela ganha rotas de fuga.",
+      "Convoque um batedor no centro do mapa e observe como ele abre quatro rotas de fuga.",
     goal: "Clique na casa central x:2, y:2.",
     expectedMove: { x: 2, y: 2 },
     successMessage:
-      "Boa. Uma pedra no centro respira melhor porque tem quatro direções disponíveis.",
+      "Boa. Um batedor no centro respira melhor porque vigia quatro direções do campo.",
     devGoal:
       "Ver como uma célula da matriz muda de EMPTY para BLACK e como os vizinhos são calculados.",
     createInitialBoard: () => createBoard(5)
   },
   {
     id: "capture",
-    title: "Fechando Rotas",
+    title: "Cerco na Estrada Norte",
     concept: "Captura",
     player: "BLACK",
     intro:
-      "A pedra branca está quase cercada. Feche a última rota de fuga para capturá-la.",
-    goal: "Jogue em x:3, y:2 para capturar a pedra branca.",
+      "Uma tropa rival está quase cercada. Feche a última rota de fuga para concluir o cerco.",
+    goal: "Jogue em x:3, y:2 para capturar a tropa branca.",
     expectedMove: { x: 3, y: 2 },
     successMessage:
-      "Captura realizada. Você não atacou a pedra: removeu todas as opções dela.",
+      "Cerco concluído. Você não atacou a unidade diretamente: removeu todas as opções dela.",
     devGoal:
       "Ver o motor chamar findGroup(), detectar liberties.length === 0 e remover o grupo.",
     createInitialBoard: () =>
@@ -55,17 +55,17 @@ export const missions: Mission[] = [
   },
   {
     id: "squad",
-    title: "Pedras em Squad",
+    title: "A Companhia Unida",
     concept: "Conexão",
     player: "BLACK",
     intro:
-      "Duas pedras separadas são frágeis. Coloque uma pedra entre elas para formar um único grupo.",
-    goal: "Jogue em x:2, y:1 para conectar as pedras pretas.",
+      "Duas unidades aliadas estão separadas. Coloque uma unidade entre elas para formar uma companhia.",
+    goal: "Jogue em x:2, y:1 para conectar as unidades pretas.",
     expectedMove: { x: 2, y: 1 },
     successMessage:
-      "Squad conectado. Agora as pedras compartilham liberdades como um grupo.",
+      "Companhia formada. Agora as unidades compartilham rotas de fuga como um grupo.",
     devGoal:
-      "Ver a busca em profundidade percorrer pedras vizinhas da mesma cor.",
+      "Ver a busca em profundidade percorrer unidades vizinhas da mesma cor.",
     createInitialBoard: () =>
       boardFromRows([
         ". . . . .",
