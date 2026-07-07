@@ -1,3 +1,5 @@
+import type { StoneCharacter } from "./character";
+
 export type PlayerColor = "BLACK" | "WHITE";
 
 export type CellState = "EMPTY" | PlayerColor;
@@ -10,6 +12,7 @@ export type Position = {
 export type BoardCell = {
   position: Position;
   state: CellState;
+  character?: StoneCharacter;
 };
 
 export type Board = BoardCell[][];
