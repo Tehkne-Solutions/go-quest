@@ -1,7 +1,12 @@
-import type { Mission } from "../../data/missions";
+type LessonBrief = {
+  title: string;
+  concept: string;
+  intro: string;
+  goal: string;
+};
 
 type TutorGoPanelProps = {
-  mission: Mission;
+  mission: LessonBrief;
   message: string;
 };
 
