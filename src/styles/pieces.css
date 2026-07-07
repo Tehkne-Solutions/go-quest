@@ -1,0 +1,45 @@
+.stone--unit {
+  height: clamp(48px, 9vw, 82px);
+  border-radius: 36% 36% 18% 18%;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.stone-unit-head,
+.stone-unit-body {
+  position: absolute;
+  display: block;
+}
+
+.stone-unit-head {
+  top: 6%;
+  width: 44%;
+  height: 34%;
+  border-radius: 50% 50% 42% 42%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+}
+
+.stone-unit-body {
+  bottom: 8%;
+  width: 70%;
+  height: 58%;
+  border-radius: 42% 42% 18% 18%;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+.stone--white .stone-unit-head {
+  background: linear-gradient(145deg, #f8f7ef, #aaa68d);
+}
+
+.stone--white .stone-unit-body {
+  background: linear-gradient(145deg, #e9e7da, #8e8b7a);
+}
+
+.stone--black .stone-unit-head {
+  background: linear-gradient(145deg, #5f6470, #171a22);
+}
+
+.stone--black .stone-unit-body {
+  background: linear-gradient(145deg, #252b38, #05070b);
+}
