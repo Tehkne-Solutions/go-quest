@@ -7,7 +7,8 @@
 }
 
 .stone-unit-head,
-.stone-unit-body {
+.stone-unit-body,
+.stone-unit-initial {
   position: absolute;
   display: block;
 }
@@ -26,6 +27,15 @@
   height: 58%;
   border-radius: 42% 42% 18% 18%;
   border: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+.stone-unit-initial {
+  z-index: 4;
+  top: 45%;
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
 }
 
 .stone--white .stone-unit-head {
