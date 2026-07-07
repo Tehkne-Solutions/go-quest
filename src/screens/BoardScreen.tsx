@@ -3,6 +3,7 @@ import { BoardGrid } from "../components/board/BoardGrid";
 import { TutorDevPanel } from "../components/tutor/TutorDevPanel";
 import { TutorEventLog } from "../components/tutor/TutorEventLog";
 import { TutorGoPanel } from "../components/tutor/TutorGoPanel";
+import { createStoneCharacter, getRoleForMission } from "../data/characters";
 import { missions } from "../data/missions";
 import { playMove } from "../engine/playMove";
 import type { Board, CaptureCounter, MissionId, PlayerColor, Position } from "../types/game";
@@ -118,7 +119,9 @@ export function BoardScreen() {
   }
 
   function handlePlay(position: Position) {
-    const result = playMove(board, position, currentPlayer);
+    const role = getRoleForMission(mission.id);
+    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
+    const result = playMove(board, position, currentPlayer, actor);
 
     setTutorEvents(result.tutorEvents);
     setSelectedEventIndex(Math.max(0, result.tutorEvents.length - 1));
