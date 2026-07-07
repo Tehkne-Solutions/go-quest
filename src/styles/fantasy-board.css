@@ -1,0 +1,263 @@
+.board-card--cinematic .board-grid,
+.board-stage .board-grid {
+  border-color: #3f342e !important;
+  background:
+    linear-gradient(90deg, rgba(255, 216, 128, 0.18) 1px, transparent 1px),
+    linear-gradient(rgba(255, 216, 128, 0.18) 1px, transparent 1px),
+    radial-gradient(circle at 18% 18%, rgba(68, 154, 255, 0.2), transparent 8%),
+    radial-gradient(circle at 82% 18%, rgba(255, 145, 51, 0.22), transparent 8%),
+    radial-gradient(circle at 18% 82%, rgba(255, 145, 51, 0.22), transparent 8%),
+    radial-gradient(circle at 82% 82%, rgba(68, 154, 255, 0.2), transparent 8%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.045) 0 8px, rgba(0, 0, 0, 0.045) 8px 16px),
+    linear-gradient(135deg, #5a5147, #302b29 52%, #17171c) !important;
+  background-size: 20% 20%, 20% 20%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100% !important;
+  box-shadow:
+    inset 0 0 44px rgba(0, 0, 0, 0.36),
+    inset 0 0 0 3px rgba(255, 218, 133, 0.12),
+    0 38px 80px rgba(0, 0, 0, 0.48) !important;
+}
+
+.board-stage .board-grid::before {
+  background:
+    linear-gradient(135deg, #29231f, #111015) !important;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 211, 130, 0.12),
+    0 22px 0 #17110d,
+    0 34px 50px rgba(0, 0, 0, 0.45);
+}
+
+.board-stage .board-grid::after {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(255, 151, 51, 0.42), transparent 8%),
+    radial-gradient(circle at 92% 8%, rgba(84, 176, 255, 0.34), transparent 8%),
+    radial-gradient(circle at 8% 92%, rgba(84, 176, 255, 0.34), transparent 8%),
+    radial-gradient(circle at 92% 92%, rgba(255, 151, 51, 0.42), transparent 8%),
+    radial-gradient(circle at 50% 50%, rgba(255, 230, 160, 0.1), transparent 42%) !important;
+}
+
+.board-cell::before,
+.board-cell::after {
+  background: rgba(255, 215, 128, 0.42) !important;
+  box-shadow: 0 0 6px rgba(255, 210, 120, 0.2);
+}
+
+.intersection {
+  width: 13px !important;
+  height: 13px !important;
+  background: radial-gradient(circle, #ffd982, #6c4c24) !important;
+  box-shadow: 0 0 12px rgba(255, 217, 130, 0.34);
+}
+
+.board-cell--target .intersection {
+  width: 24px !important;
+  height: 24px !important;
+  background: radial-gradient(circle, #8ff3a0, #26944a) !important;
+  box-shadow: 0 0 0 8px rgba(119, 214, 141, 0.16), 0 0 24px rgba(119, 214, 141, 0.9) !important;
+}
+
+.stone--unit {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: clamp(46px, 8vw, 84px) !important;
+  height: clamp(62px, 10vw, 98px) !important;
+  border-radius: 34% 34% 16% 16% !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transform-style: preserve-3d;
+}
+
+.unit-shadow {
+  z-index: 0;
+  bottom: 0;
+  width: 86%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  filter: blur(3px);
+}
+
+.unit-aura {
+  z-index: 1;
+  bottom: 6%;
+  width: 90%;
+  height: 56%;
+  border-radius: 50%;
+  opacity: 0.58;
+  filter: blur(1px);
+}
+
+.stone-unit-head {
+  z-index: 5;
+  top: 1%;
+  width: 38%;
+  height: 28%;
+  border-radius: 48% 48% 38% 38%;
+  border: 2px solid rgba(255, 255, 255, 0.24);
+}
+
+.stone-unit-body {
+  z-index: 4;
+  bottom: 12%;
+  width: 72%;
+  height: 58%;
+  border-radius: 36% 36% 18% 18%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.stone-unit-weapon {
+  z-index: 6;
+  right: -2%;
+  top: 34%;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #130d08;
+  background: linear-gradient(180deg, #ffe09c, #bd7f2b);
+  font-size: 1rem;
+  font-weight: 900;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.38);
+}
+
+.stone-unit-initial {
+  z-index: 8;
+  top: 43%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff3c5;
+  background: rgba(0, 0, 0, 0.34);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
+}
+
+.stone-unit-body::before,
+.stone-unit-body::after,
+.stone-unit-head::before,
+.stone-unit-head::after {
+  content: "";
+  position: absolute;
+  display: block;
+}
+
+.stone-unit-body::before {
+  left: -14%;
+  top: 36%;
+  width: 26%;
+  height: 34%;
+  border-radius: 999px;
+  background: inherit;
+  filter: brightness(0.85);
+  transform: rotate(18deg);
+}
+
+.stone-unit-body::after {
+  right: -14%;
+  top: 34%;
+  width: 26%;
+  height: 36%;
+  border-radius: 999px;
+  background: inherit;
+  filter: brightness(1.12);
+  transform: rotate(-18deg);
+}
+
+.stone--black .stone-unit-head {
+  background: linear-gradient(145deg, #565e73, #11131d) !important;
+}
+
+.stone--black .stone-unit-body {
+  background: linear-gradient(145deg, #2b3446, #080a10 70%) !important;
+}
+
+.stone--white .stone-unit-head {
+  background: linear-gradient(145deg, #fff8da, #b9a37a) !important;
+}
+
+.stone--white .stone-unit-body {
+  background: linear-gradient(145deg, #e9e1c6, #83745b 70%) !important;
+}
+
+.unit-role-scout .stone-unit-head::before {
+  inset: -8px -8px auto;
+  height: 16px;
+  border-radius: 18px 18px 6px 6px;
+  background: linear-gradient(90deg, #1d693a, #75db80);
+  transform: rotate(-8deg);
+}
+
+.unit-role-hunter .stone-unit-body::before {
+  height: 56%;
+  width: 10%;
+  left: -22%;
+  top: 12%;
+  background: #b47a35;
+  transform: rotate(-26deg);
+}
+
+.unit-role-guard .stone-unit-body::after {
+  right: -24%;
+  width: 34%;
+  height: 48%;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #d8d8d8, #546174);
+  transform: rotate(-8deg);
+}
+
+.unit-role-link .stone-unit-weapon {
+  background: linear-gradient(180deg, #d9b3ff, #7247df);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(186, 118, 255, 0.8);
+}
+
+.unit-role-builder .stone-unit-body::after {
+  right: -30%;
+  width: 36%;
+  height: 30%;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #b9782d, #4c2a13);
+  transform: rotate(-8deg);
+}
+
+.unit-role-raider .stone-unit-head::before {
+  left: -18%;
+  right: -18%;
+  top: -16px;
+  height: 20px;
+  clip-path: polygon(0 100%, 15% 0, 32% 100%, 68% 100%, 85% 0, 100% 100%);
+  background: linear-gradient(90deg, #a83a25, #ff6b35);
+}
+
+.board-cell--formation .camp-marker {
+  width: 60%;
+  height: 26%;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 190, 90, 0.9), transparent 22%),
+    linear-gradient(90deg, rgba(86, 55, 31, 0.7), rgba(38, 26, 20, 0.7));
+  box-shadow: 0 0 20px rgba(255, 172, 84, 0.42);
+}
+
+.stone--formation .unit-aura {
+  opacity: 0.84;
+  box-shadow: 0 0 18px rgba(255, 218, 128, 0.5);
+}
+
+@media (max-width: 680px) {
+  .stone--unit {
+    width: clamp(36px, 13vw, 58px) !important;
+    height: clamp(48px, 16vw, 72px) !important;
+  }
+
+  .stone-unit-weapon {
+    width: 20px;
+    height: 20px;
+    font-size: 0.78rem;
+  }
+}
