@@ -1,4 +1,5 @@
 import type { Board, PlayerColor, Position } from "../types/game";
+import type { StoneCharacter } from "../types/character";
 import type { TutorEvent } from "../types/tutor";
 import { findGroup } from "./findGroup";
 import { getNeighbors } from "./getNeighbors";
@@ -20,7 +21,8 @@ function colorLabel(color: PlayerColor): string {
 export function playMove(
   board: Board,
   position: Position,
-  color: PlayerColor
+  color: PlayerColor,
+  character?: StoneCharacter
 ): MoveResult {
   const cell = board[position.y][position.x];
 
@@ -33,7 +35,7 @@ export function playMove(
       tutorEvents: [
         {
           title: "Jogada bloqueada",
-          goExplanation: "Você só pode jogar em casas vazias.",
+          goExplanation: "Você só pode mover tropas para casas vazias do campo.",
           devExplanation:
             "Antes de alterar a matriz, o motor verificou que essa célula não está com estado EMPTY.",
           codeFocus: "if (cell.state !== 'EMPTY')"
@@ -46,26 +48,29 @@ export function playMove(
 
   nextBoard[position.y][position.x] = {
     position,
-    state: color
+    state: color,
+    character
   };
 
   const opponent: PlayerColor = color === "BLACK" ? "WHITE" : "BLACK";
   const neighbors = getNeighbors(nextBoard, position);
   let captured: Position[] = [];
 
+  const actorName = character ? `${character.name}, ${character.title}` : `pedra ${colorLabel(color)}`;
+
   const tutorEvents: TutorEvent[] = [
     {
-      title: "Pedra colocada",
-      goExplanation: `Você colocou uma pedra ${colorLabel(color)} no tabuleiro.`,
-      devExplanation: `A célula board[${position.y}][${position.x}] mudou de EMPTY para ${color}.`,
-      codeFocus: "nextBoard[position.y][position.x] = { position, state: color }"
+      title: "Personagem convocado",
+      goExplanation: `${actorName} entrou no tabuleiro. No Go oficial isso ainda é uma pedra ${colorLabel(color)}, mas no GoQuest ela ganha papel de unidade medieval para facilitar a leitura estratégica.`,
+      devExplanation: `A célula board[${position.y}][${position.x}] mudou de EMPTY para ${color} e recebeu um objeto character opcional.`,
+      codeFocus: "nextBoard[position.y][position.x] = { position, state: color, character }"
     },
     {
       title: "Vizinhos analisados",
       goExplanation:
-        "O jogo olhou para cima, direita, baixo e esquerda. Diagonais não contam como respiração.",
+        "A unidade só respira e se conecta pelas quatro direções do mapa: norte, leste, sul e oeste. Diagonais não contam.",
       devExplanation:
-        "O motor chamou getNeighbors() para descobrir quais casas encostam na pedra dentro do tabuleiro.",
+        "O motor chamou getNeighbors() para descobrir quais casas encostam na unidade dentro do tabuleiro.",
       codeFocus: "const neighbors = getNeighbors(nextBoard, position)"
     }
   ];
@@ -77,11 +82,11 @@ export function playMove(
       const enemyGroup = findGroup(nextBoard, neighbor);
 
       tutorEvents.push({
-        title: "Grupo inimigo analisado",
+        title: "Companhia inimiga analisada",
         goExplanation:
-          "Depois da sua jogada, o jogo verificou se algum grupo inimigo ficou sem liberdades.",
+          "Depois da sua jogada, o jogo verificou se alguma tropa inimiga ficou sem rotas de fuga.",
         devExplanation:
-          "O motor chamou findGroup() para calcular pedras conectadas e liberdades do grupo inimigo.",
+          "O motor chamou findGroup() para calcular unidades conectadas e liberdades do grupo inimigo.",
         codeFocus: "const enemyGroup = findGroup(nextBoard, neighbor)"
       });
 
@@ -90,9 +95,9 @@ export function playMove(
         nextBoard = removeGroup(nextBoard, enemyGroup);
 
         tutorEvents.push({
-          title: "Captura detectada",
+          title: "Cerco completo",
           goExplanation:
-            "O grupo inimigo não tinha mais nenhuma rota de fuga e saiu do tabuleiro.",
+            "A companhia inimiga perdeu todas as rotas de fuga e foi removida do campo de batalha.",
           devExplanation:
             "Como enemyGroup.liberties.length era 0, o motor chamou removeGroup() e transformou aquelas células em EMPTY.",
           codeFocus: "if (enemyGroup.liberties.length === 0) removeGroup(...)"
@@ -105,13 +110,13 @@ export function playMove(
   const ownLiberties = getStoneLiberties(nextBoard, position);
 
   tutorEvents.push({
-    title: "Liberdades calculadas",
+    title: "Rotas de fuga calculadas",
     goExplanation:
       ownGroup.liberties.length === 1
-        ? "Atenção: esse grupo está em atari, com apenas uma rota de fuga."
-        : `Esse grupo possui ${ownGroup.liberties.length} liberdade(s).`,
+        ? "Alerta de batalha: essa companhia está em atari, com apenas uma rota de fuga."
+        : `Essa companhia possui ${ownGroup.liberties.length} rota(s) de fuga compartilhadas.`,
     devExplanation:
-      "O motor encontrou o grupo da pedra jogada e contou todas as casas vazias conectadas a ele.",
+      "O motor encontrou o grupo da unidade jogada e contou todas as casas vazias conectadas a ele.",
     codeFocus: "const ownGroup = findGroup(nextBoard, position)"
   });
 
@@ -120,13 +125,13 @@ export function playMove(
       board,
       success: false,
       captured: [],
-      message: "Essa jogada não é permitida porque sua pedra ficaria sem respirar.",
+      message: "Essa jogada não é permitida porque sua unidade ficaria sem respirar.",
       tutorEvents: [
         ...tutorEvents,
         {
-          title: "Jogada sem liberdade",
+          title: "Unidade sem rota de fuga",
           goExplanation:
-            "Essa pedra nasceria sem nenhuma rota de fuga e não capturaria nada.",
+            "Essa unidade entraria no campo já cercada e não capturaria ninguém.",
           devExplanation:
             "O motor detectou que o próprio grupo ficou com 0 liberdades e rejeitou a jogada.",
           codeFocus: "if (ownGroup.liberties.length === 0 && captured.length === 0)"
@@ -141,16 +146,16 @@ export function playMove(
     captured,
     message:
       captured.length > 0
-        ? `Você capturou ${captured.length} pedra(s).`
-        : `Pedra ${colorLabel(color)} colocada com ${ownLiberties.length} liberdade(s) diretas e ${ownGroup.liberties.length} liberdade(s) no grupo.`,
+        ? `${actorName} completou um cerco e capturou ${captured.length} unidade(s).`
+        : `${actorName} entrou em campo com ${ownLiberties.length} rota(s) diretas e ${ownGroup.liberties.length} rota(s) na companhia.`,
     tutorEvents: [
       ...tutorEvents,
       {
-        title: "Jogada concluída",
+        title: "Ordem executada",
         goExplanation:
           captured.length > 0
-            ? "Sua jogada fechou todas as liberdades de um grupo inimigo. Isso é uma captura."
-            : "Sua pedra entrou no mapa e ainda possui rotas para respirar.",
+            ? "Sua jogada fechou todas as rotas de fuga de uma companhia inimiga. Isso é uma captura."
+            : "Sua unidade entrou no mapa e ainda possui espaço para respirar.",
         devExplanation:
           "O motor retornou um novo estado de tabuleiro para a interface renderizar.",
         codeFocus: "return { board: nextBoard, success: true, captured, message }"
