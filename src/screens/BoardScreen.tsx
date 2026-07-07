@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { BoardGrid } from "../components/board/BoardGrid";
+import { CameraControls, type BoardCamera } from "../components/board/CameraControls";
+import { CharacterPanel } from "../components/character/CharacterPanel";
+import { CodexPanel } from "../components/character/CodexPanel";
 import { TutorDevPanel } from "../components/tutor/TutorDevPanel";
 import { TutorEventLog } from "../components/tutor/TutorEventLog";
 import { TutorGoPanel } from "../components/tutor/TutorGoPanel";
 import { createStoneCharacter, getRoleForMission } from "../data/characters";
 import { missions } from "../data/missions";
 import { playMove } from "../engine/playMove";
+import type { StoneCharacter } from "../types/character";
 import type { Board, CaptureCounter, MissionId, PlayerColor, Position } from "../types/game";
 import type { TutorEvent } from "../types/tutor";
 
@@ -78,6 +82,8 @@ export function BoardScreen() {
   const [selectedEventIndex, setSelectedEventIndex] = useState(0);
   const [captures, setCaptures] = useState<CaptureCounter>({ BLACK: 0, WHITE: 0 });
   const [showTarget, setShowTarget] = useState(true);
+  const [boardCamera, setBoardCamera] = useState<BoardCamera>("iso");
+  const [selectedCharacter, setSelectedCharacter] = useState<StoneCharacter | undefined>();
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
 
   const selectedEvent = tutorEvents[selectedEventIndex];
@@ -95,6 +101,7 @@ export function BoardScreen() {
     setCurrentPlayer(nextMission.player);
     setTutorEvents([]);
     setSelectedEventIndex(0);
+    setSelectedCharacter(undefined);
     setMessage("Sensei Grid: missão carregada. Observe o objetivo e teste no tabuleiro.");
     setCaptures({ BLACK: 0, WHITE: 0 });
     setShowTarget(true);
@@ -119,6 +126,14 @@ export function BoardScreen() {
   }
 
   function handlePlay(position: Position) {
+    const clickedCell = board[position.y][position.x];
+
+    if (clickedCell.state !== "EMPTY") {
+      setSelectedCharacter(clickedCell.character);
+      setMessage(clickedCell.character ? `${clickedCell.character.name} selecionado no campo.` : "Unidade selecionada.");
+      return;
+    }
+
     const role = getRoleForMission(mission.id);
     const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
     const result = playMove(board, position, currentPlayer, actor);
@@ -132,6 +147,7 @@ export function BoardScreen() {
     }
 
     setBoard(result.board);
+    setSelectedCharacter(actor);
 
     if (result.captured.length > 0) {
       setCaptures((current) => ({
@@ -157,18 +173,23 @@ export function BoardScreen() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="hero">
+    <main className="app-shell app-shell--game">
+      <header className="hero game-hero">
         <div>
-          <p className="eyebrow">GoQuest Sprint 1 + Base Sprint 2</p>
-          <h1>Modo Tutor: Go + Programação</h1>
+          <p className="eyebrow">GoQuest Sprint 4</p>
+          <h1>Reino do Tabuleiro</h1>
           <p>
-            Aprenda a jogar Go e veja o motor do jogo sendo explicado como matriz,
-            estado, vizinhos, grupos, liberdades e captura.
+            Go como campanha medieval: unidades entram no campo, formam companhias e revelam a lógica do motor.
           </p>
         </div>
         <div className="signature">Tehkné Solutions</div>
       </header>
+
+      <nav className="game-menu" aria-label="Menu de jogo">
+        <button type="button" onClick={() => resetMission("breath")}>Jornada</button>
+        <button type="button" onClick={() => setShowTarget((value) => !value)}>{showTarget ? "Dica ativa" : "Dica oculta"}</button>
+        <button type="button" onClick={() => resetMission()}>Reiniciar</button>
+      </nav>
 
       <section className="status-bar" aria-label="Estado do jogo">
         <div>
@@ -224,24 +245,28 @@ export function BoardScreen() {
         )}
       </section>
 
-      <section className="workspace">
+      <section className="workspace workspace--cinematic">
         <TutorGoPanel mission={mission} message={message} />
 
-        <section className="board-card">
+        <section className="board-card board-card--cinematic">
           <div className="board-header">
             <div>
-              <p className="eyebrow">Tabuleiro 5x5</p>
+              <p className="eyebrow">Campo 2.5D</p>
               <h2>{mission.concept}</h2>
             </div>
-            <button type="button" onClick={() => setShowTarget((value) => !value)}>
-              {showTarget ? "Ocultar dica" : "Mostrar dica"}
-            </button>
+            <div className="board-header-actions">
+              <CameraControls value={boardCamera} onChange={setBoardCamera} />
+              <button type="button" onClick={() => setShowTarget((value) => !value)}>
+                {showTarget ? "Ocultar dica" : "Mostrar dica"}
+              </button>
+            </div>
           </div>
 
           <BoardGrid
             board={board}
             expectedMove={mission.expectedMove}
             showTarget={showTarget}
+            camera={boardCamera}
             onCellClick={handlePlay}
           />
 
@@ -262,13 +287,15 @@ export function BoardScreen() {
           )}
         </section>
 
-        <div className="tutor-stack">
+        <div className="tutor-stack tutor-stack--game">
+          <CharacterPanel board={board} character={selectedCharacter} />
           <TutorDevPanel event={selectedEvent} devGoal={mission.devGoal} />
           <TutorEventLog
             events={tutorEvents}
             selectedIndex={selectedEventIndex}
             onSelect={setSelectedEventIndex}
           />
+          <CodexPanel />
         </div>
       </section>
     </main>
