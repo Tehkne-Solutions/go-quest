@@ -1,0 +1,45 @@
+.unit-piece {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: clamp(40px, 8vw, 72px);
+  height: clamp(48px, 9vw, 82px);
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.36));
+}
+
+.unit-piece__head {
+  position: absolute;
+  top: 6%;
+  width: 44%;
+  height: 34%;
+  border-radius: 50% 50% 42% 42%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(145deg, #f4dca5, #80512a);
+}
+
+.unit-piece__body {
+  position: absolute;
+  bottom: 8%;
+  width: 70%;
+  height: 58%;
+  border-radius: 42% 42% 18% 18%;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(145deg, #303442, #10131a);
+}
+
+.unit-piece--white .unit-piece__head {
+  background: linear-gradient(145deg, #f8f7ef, #aaa68d);
+}
+
+.unit-piece--white .unit-piece__body {
+  background: linear-gradient(145deg, #e9e7da, #8e8b7a);
+}
+
+.unit-piece--black .unit-piece__head {
+  background: linear-gradient(145deg, #5f6470, #171a22);
+}
+
+.unit-piece--black .unit-piece__body {
+  background: linear-gradient(145deg, #252b38, #05070b);
+}
