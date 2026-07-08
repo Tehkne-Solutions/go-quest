@@ -134,6 +134,11 @@ export function BoardScreen() {
       return;
     }
 
+    if (isMissionComplete) {
+      setMessage("Missão já concluída. Avance para a próxima missão para convocar outra classe.");
+      return;
+    }
+
     const role = getRoleForMission(mission.id);
     const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
     const result = playMove(board, position, currentPlayer, actor);
