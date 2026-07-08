@@ -1,0 +1,337 @@
+:root {
+  --gq-bg: #06080d;
+  --gq-panel: rgba(23, 27, 36, 0.92);
+  --gq-panel-2: rgba(34, 37, 47, 0.92);
+  --gq-gold: #d7a95e;
+  --gq-gold-2: #f3d58d;
+  --gq-ivory: #f0e5cc;
+  --gq-muted: #b8ad98;
+  --gq-border: rgba(215, 169, 94, 0.24);
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(60, 115, 175, 0.18), transparent 32rem),
+    radial-gradient(circle at 90% 0%, rgba(215, 169, 94, 0.13), transparent 30rem),
+    linear-gradient(180deg, #10141d 0%, var(--gq-bg) 70%) !important;
+}
+
+.app-shell--game {
+  width: min(1760px, 100%);
+  padding: 18px !important;
+}
+
+.game-hero {
+  min-height: 136px !important;
+  padding: 22px 28px 22px 128px !important;
+  border: 1px solid var(--gq-border) !important;
+  background:
+    url("/assets/goquest/ui/goquest-crest.png") 24px 50% / 82px 82px no-repeat,
+    linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+    rgba(13, 16, 24, 0.94) !important;
+  border-radius: 28px !important;
+  overflow: hidden;
+}
+
+.game-hero h1 {
+  color: var(--gq-ivory);
+  letter-spacing: -0.035em;
+}
+
+.game-menu {
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 16px;
+  padding: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--gq-border);
+  background: rgba(4, 5, 9, 0.88);
+  backdrop-filter: blur(16px);
+}
+
+.game-menu button,
+.camera-button,
+.board-header-actions > button,
+.board-actions button {
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, var(--gq-gold-2), var(--gq-gold)) !important;
+  color: #1c1309 !important;
+  font-weight: 900 !important;
+}
+
+.status-bar {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.status-bar > div,
+.journey-panel,
+.panel,
+.board-card {
+  border: 1px solid var(--gq-border) !important;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018)),
+    var(--gq-panel) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 18px 42px rgba(0,0,0,0.24) !important;
+}
+
+.workspace--cinematic {
+  display: grid;
+  grid-template-columns: 300px minmax(680px, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.board-card--cinematic {
+  min-height: 780px;
+  overflow: visible !important;
+}
+
+.board-stage {
+  width: min(100%, 820px) !important;
+  margin: 0 auto;
+  perspective: 1250px;
+  perspective-origin: 50% 24%;
+}
+
+.fantasy-board-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  transform-style: preserve-3d;
+}
+
+.board-grid {
+  position: relative;
+  width: min(100%, 640px) !important;
+  aspect-ratio: 1 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 38px !important;
+  background: url("/assets/goquest/board/arena-stone-board.png") center / cover no-repeat !important;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.52) !important;
+  overflow: visible !important;
+}
+
+.board-grid::before,
+.board-grid::after,
+.board-cell::before,
+.board-cell::after {
+  display: none !important;
+}
+
+.board-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: transparent !important;
+  transform-style: preserve-3d;
+}
+
+.intersection {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50%;
+  background: rgba(255, 214, 120, 0.28) !important;
+  box-shadow: 0 0 8px rgba(255, 214, 120, 0.18);
+}
+
+.board-cell--target .intersection {
+  width: 24px !important;
+  height: 24px !important;
+  background: radial-gradient(circle, #9df0a4, #276c3a) !important;
+  box-shadow: 0 0 0 7px rgba(110, 189, 115, 0.13), 0 0 18px rgba(110, 189, 115, 0.5) !important;
+}
+
+.board-stage--top .board-grid {
+  transform: rotateX(0deg) rotateZ(0deg) scale(1);
+}
+
+.board-stage--iso .board-grid {
+  transform: rotateX(54deg) rotateZ(-37deg) scale(0.92);
+}
+
+.board-stage--cinematic .board-grid {
+  transform: rotateX(67deg) rotateZ(-18deg) scale(0.86) translateY(18px);
+}
+
+.board-stage--rotated .board-grid {
+  transform: rotateX(54deg) rotateZ(38deg) scale(0.92);
+}
+
+.asset-piece {
+  position: relative;
+  z-index: 5;
+  display: inline-grid;
+  place-items: center;
+  width: clamp(104px, 8.2vw, 150px);
+  height: clamp(142px, 11.5vw, 210px);
+  pointer-events: none;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 22px 18px rgba(0,0,0,0.54));
+}
+
+.board-stage--iso .asset-piece {
+  transform: translateZ(78px) rotateX(-54deg) rotateZ(37deg) scale(1.08) !important;
+}
+
+.board-stage--cinematic .asset-piece {
+  transform: translateZ(86px) rotateX(-67deg) rotateZ(18deg) scale(1.18) !important;
+}
+
+.board-stage--rotated .asset-piece {
+  transform: translateZ(78px) rotateX(-54deg) rotateZ(-38deg) scale(1.08) !important;
+}
+
+.asset-piece__shadow {
+  position: absolute;
+  bottom: 5%;
+  width: 72%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.46);
+  filter: blur(6px);
+}
+
+.asset-piece__pedestal {
+  position: absolute;
+  bottom: 2%;
+  width: 66%;
+  height: 18%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #7b6140, #241914 68%, #090808);
+  border: 2px solid rgba(243, 213, 141, 0.48);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.16);
+}
+
+.asset-piece__img {
+  position: absolute;
+  bottom: 4%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  user-select: none;
+  image-rendering: auto;
+}
+
+.asset-piece--selected .asset-piece__pedestal {
+  box-shadow: 0 0 0 7px rgba(243, 213, 141, 0.12), 0 0 28px rgba(243, 213, 141, 0.42), 0 10px 18px rgba(0,0,0,0.42);
+}
+
+.formation-camp {
+  position: absolute;
+  z-index: 2;
+  bottom: 9%;
+  width: 62%;
+  height: 32%;
+  pointer-events: none;
+}
+
+.formation-camp__banner,
+.formation-camp__crate,
+.formation-camp__ember {
+  position: absolute;
+  display: block;
+}
+
+.formation-camp__banner {
+  left: 4%;
+  bottom: 30%;
+  width: 10px;
+  height: 34px;
+  background: linear-gradient(180deg, #224b7b, #0d203a);
+  border: 1px solid rgba(245,198,111,0.45);
+}
+
+.formation-camp__crate {
+  right: 0;
+  bottom: 4%;
+  width: 22px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(145deg, #9a6232, #44230f);
+}
+
+.formation-camp__ember {
+  left: 42%;
+  bottom: 5%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffb35d, transparent 70%);
+}
+
+.right-panel-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.right-panel-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid var(--gq-border);
+  background: rgba(4, 5, 8, 0.75);
+}
+
+.right-panel-tab {
+  border-radius: 14px;
+  padding: 10px 8px;
+  color: var(--gq-muted);
+  background: rgba(255,255,255,0.05);
+  font-weight: 900;
+}
+
+.right-panel-tab--active {
+  color: #1c1309;
+  background: linear-gradient(180deg, var(--gq-gold-2), var(--gq-gold));
+}
+
+.right-panel-content,
+.tutor-go-panel {
+  max-height: calc(100vh - 270px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+@media (max-width: 1320px) {
+  .workspace--cinematic {
+    grid-template-columns: minmax(260px, 0.74fr) minmax(560px, 1.26fr);
+  }
+  .right-panel-shell {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 920px) {
+  .workspace--cinematic,
+  .status-bar {
+    grid-template-columns: 1fr !important;
+  }
+  .game-hero {
+    padding-left: 24px !important;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+      rgba(13, 16, 24, 0.94) !important;
+  }
+  .board-stage--iso .board-grid,
+  .board-stage--cinematic .board-grid,
+  .board-stage--rotated .board-grid {
+    transform: rotateX(0deg) rotateZ(0deg) scale(1);
+  }
+  .board-stage--iso .asset-piece,
+  .board-stage--cinematic .asset-piece,
+  .board-stage--rotated .asset-piece {
+    transform: none !important;
+  }
+}

@@ -8,21 +8,16 @@ type StoneViewProps = {
   selected?: boolean;
 };
 
-const roleGlyph: Record<CharacterRole, string> = {
-  SCOUT: "♞",
-  HUNTER: "➶",
-  GUARD: "♜",
-  LINK: "✦",
-  BUILDER: "⚙",
-  RAIDER: "▲"
+const roleAsset: Record<CharacterRole, string> = {
+  SCOUT: "/assets/goquest/pieces/scout.png",
+  HUNTER: "/assets/goquest/pieces/hunter.png",
+  GUARD: "/assets/goquest/pieces/guard.png",
+  LINK: "/assets/goquest/pieces/link.png",
+  BUILDER: "/assets/goquest/pieces/builder.png",
+  RAIDER: "/assets/goquest/pieces/raider.png"
 };
 
-export function StoneView({
-  color,
-  character,
-  formation = false,
-  selected = false
-}: StoneViewProps) {
+export function StoneView({ color, character, formation = false, selected = false }: StoneViewProps) {
   const role: CharacterRole = character?.role ?? "SCOUT";
   const label = character
     ? `${character.name} - ${character.title}`
@@ -31,27 +26,18 @@ export function StoneView({
   return (
     <span
       className={[
-        "miniature-piece",
-        `miniature-piece--${color.toLowerCase()}`,
-        `miniature-piece--${role.toLowerCase()}`,
-        formation ? "miniature-piece--formation" : "",
-        selected ? "miniature-piece--selected" : ""
+        "asset-piece",
+        `asset-piece--${color.toLowerCase()}`,
+        `asset-piece--${role.toLowerCase()}`,
+        formation ? "asset-piece--formation" : "",
+        selected ? "asset-piece--selected" : ""
       ].join(" ")}
       aria-label={label}
       title={label}
     >
-      <span className="miniature-piece__shadow" />
-      <span className="miniature-piece__pedestal">
-        <span className="miniature-piece__pedestal-ring" />
-      </span>
-      <span className="miniature-piece__body">
-        <span className="miniature-piece__head" />
-        <span className="miniature-piece__torso" />
-        <span className="miniature-piece__left-arm" />
-        <span className="miniature-piece__right-arm" />
-        <span className="miniature-piece__weapon">{roleGlyph[role]}</span>
-      </span>
-      <span className="miniature-piece__class-mark" />
+      <span className="asset-piece__shadow" />
+      <span className="asset-piece__pedestal" />
+      <img src={roleAsset[role]} alt="" className="asset-piece__img" draggable={false} />
     </span>
   );
 }

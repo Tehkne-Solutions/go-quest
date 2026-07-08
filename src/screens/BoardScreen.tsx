@@ -22,7 +22,7 @@ type ProgressState = {
   medals: MedalId[];
 };
 
-const progressStorageKey = "goquest-progress-v4";
+const progressStorageKey = "goquest-progress-v52";
 
 const medalLabels: Record<MedalId, string> = {
   "breath-master": "Guardião das Liberdades",
@@ -66,14 +66,9 @@ function loadProgress(): ProgressState {
   if (typeof window === "undefined") return emptyProgress();
 
   try {
-    const saved =
-      window.localStorage.getItem(progressStorageKey) ??
-      window.localStorage.getItem("goquest-progress-v1");
-
+    const saved = window.localStorage.getItem(progressStorageKey);
     if (!saved) return emptyProgress();
-
     const parsed = JSON.parse(saved) as Partial<ProgressState>;
-
     return {
       xp: parsed.xp ?? 0,
       completedMissions: parsed.completedMissions ?? [],
@@ -87,7 +82,6 @@ function loadProgress(): ProgressState {
 
 function roleForPuzzle(concept: string): CharacterRole {
   const text = concept.toLowerCase();
-
   if (text.includes("captura") || text.includes("cerco")) return "HUNTER";
   if (text.includes("conex") || text.includes("conectar")) return "LINK";
   if (text.includes("territ")) return "BUILDER";
@@ -101,16 +95,8 @@ export function BoardScreen() {
   const [puzzleId, setPuzzleId] = useState(puzzles[0].id);
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
 
-  const mission = useMemo(
-    () => missions.find((item) => item.id === missionId) ?? missions[0],
-    [missionId]
-  );
-
-  const puzzle = useMemo(
-    () => puzzles.find((item) => item.id === puzzleId) ?? puzzles[0],
-    [puzzleId]
-  );
-
+  const mission = useMemo(() => missions.find((item) => item.id === missionId) ?? missions[0], [missionId]);
+  const puzzle = useMemo(() => puzzles.find((item) => item.id === puzzleId) ?? puzzles[0], [puzzleId]);
   const activeLesson = mode === "mission" ? mission : mode === "puzzle" ? puzzle : freeLesson;
   const targetMove = mode === "mission" ? mission.expectedMove : mode === "puzzle" ? puzzle.solution : undefined;
 
@@ -126,7 +112,6 @@ export function BoardScreen() {
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
   const [hasPlayedCurrentRun, setHasPlayedCurrentRun] = useState(false);
 
-  const selectedEvent = tutorEvents[selectedEventIndex];
   const isMissionComplete = progress.completedMissions.includes(mission.id);
   const isPuzzleComplete = progress.completedPuzzles.includes(puzzle.id);
 
@@ -136,7 +121,6 @@ export function BoardScreen() {
 
   function loadMission(nextMissionId = mission.id) {
     const nextMission = missions.find((item) => item.id === nextMissionId) ?? missions[0];
-
     setMode("mission");
     setMissionId(nextMission.id);
     setBoard(nextMission.createInitialBoard());
@@ -153,7 +137,6 @@ export function BoardScreen() {
 
   function loadPuzzle(nextPuzzleId = puzzle.id) {
     const nextPuzzle = puzzles.find((item) => item.id === nextPuzzleId) ?? puzzles[0];
-
     setMode("puzzle");
     setPuzzleId(nextPuzzle.id);
     setBoard(nextPuzzle.createInitialBoard());
@@ -184,7 +167,6 @@ export function BoardScreen() {
 
   function clearProgress() {
     window.localStorage.removeItem(progressStorageKey);
-    window.localStorage.removeItem("goquest-progress-v1");
     setProgress(emptyProgress());
     loadMission("breath");
     setMessage("Progresso local limpo. A campanha reiniciou.");
@@ -192,17 +174,13 @@ export function BoardScreen() {
 
   function completeMission() {
     const reward = missionRewards[mission.id];
-
     setProgress((current) => {
       if (current.completedMissions.includes(mission.id)) return current;
-
       return {
         ...current,
         xp: current.xp + reward.xp,
         completedMissions: [...current.completedMissions, mission.id],
-        medals: current.medals.includes(reward.medal)
-          ? current.medals
-          : [...current.medals, reward.medal]
+        medals: current.medals.includes(reward.medal) ? current.medals : [...current.medals, reward.medal]
       };
     });
   }
@@ -210,12 +188,7 @@ export function BoardScreen() {
   function completePuzzle() {
     setProgress((current) => {
       if (current.completedPuzzles.includes(puzzle.id)) return current;
-
-      return {
-        ...current,
-        xp: current.xp + 35,
-        completedPuzzles: [...current.completedPuzzles, puzzle.id]
-      };
+      return { ...current, xp: current.xp + 35, completedPuzzles: [...current.completedPuzzles, puzzle.id] };
     });
   }
 
@@ -234,13 +207,7 @@ export function BoardScreen() {
       return;
     }
 
-    const role =
-      mode === "mission"
-        ? getRoleForMission(mission.id)
-        : mode === "puzzle"
-          ? roleForPuzzle(puzzle.concept)
-          : "SCOUT";
-
+    const role = mode === "mission" ? getRoleForMission(mission.id) : mode === "puzzle" ? roleForPuzzle(puzzle.concept) : "SCOUT";
     const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
     const result = playMove(board, position, currentPlayer, actor);
 
@@ -256,10 +223,7 @@ export function BoardScreen() {
     setHasPlayedCurrentRun(mode !== "free");
 
     if (result.captured.length > 0) {
-      setCaptures((current) => ({
-        ...current,
-        [currentPlayer]: current[currentPlayer] + result.captured.length
-      }));
+      setCaptures((current) => ({ ...current, [currentPlayer]: current[currentPlayer] + result.captured.length }));
     }
 
     if (samePosition(position, targetMove) && mode === "mission") {
@@ -278,8 +242,7 @@ export function BoardScreen() {
   }
 
   function goToNextMission() {
-    const nextMissionId = getNextMissionId(mission.id);
-    loadMission(nextMissionId);
+    loadMission(getNextMissionId(mission.id));
   }
 
   function goToNextPuzzle() {
@@ -292,11 +255,9 @@ export function BoardScreen() {
     <main className="app-shell app-shell--game">
       <header className="hero game-hero">
         <div>
-          <p className="eyebrow">GoQuest Sprint 4.4</p>
+          <p className="eyebrow">GoQuest Sprint 5.2</p>
           <h1>Reino do Tabuleiro</h1>
-          <p>
-            Uma arena viva de estratégia: Go, fantasia medieval, formações e lógica de programação.
-          </p>
+          <p>Uma arena viva de estratégia: Go, fantasia medieval, formações e lógica de programação.</p>
         </div>
         <div className="signature">Tehkné Solutions</div>
       </header>
@@ -327,23 +288,13 @@ export function BoardScreen() {
         <div className="mission-tabs">
           {mode === "puzzle"
             ? puzzles.map((item) => (
-                <button
-                  key={item.id}
-                  className={item.id === puzzle.id ? "mission-tab mission-tab--active" : "mission-tab"}
-                  type="button"
-                  onClick={() => loadPuzzle(item.id)}
-                >
+                <button key={item.id} className={item.id === puzzle.id ? "mission-tab mission-tab--active" : "mission-tab"} type="button" onClick={() => loadPuzzle(item.id)}>
                   <span>{progress.completedPuzzles.includes(item.id) ? "✓" : item.id.replace("p", "")}</span>
                   <strong>{item.title}</strong>
                 </button>
               ))
             : missions.map((item) => (
-                <button
-                  key={item.id}
-                  className={item.id === mission.id && mode === "mission" ? "mission-tab mission-tab--active" : "mission-tab"}
-                  type="button"
-                  onClick={() => loadMission(item.id)}
-                >
+                <button key={item.id} className={item.id === mission.id && mode === "mission" ? "mission-tab mission-tab--active" : "mission-tab"} type="button" onClick={() => loadMission(item.id)}>
                   <span>{progress.completedMissions.includes(item.id) ? "✓" : "•"}</span>
                   <strong>{item.title}</strong>
                 </button>
@@ -352,9 +303,7 @@ export function BoardScreen() {
 
         {progress.medals.length > 0 && (
           <div className="medal-row">
-            {progress.medals.map((medal) => (
-              <span key={medal}>{medalLabels[medal]}</span>
-            ))}
+            {progress.medals.map((medal) => <span key={medal}>{medalLabels[medal]}</span>)}
           </div>
         )}
       </section>
@@ -389,31 +338,12 @@ export function BoardScreen() {
             <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>
               Rejogar
             </button>
-            {mode === "mission" && (
-              <button type="button" onClick={goToNextMission} disabled={mission.id === missions[missions.length - 1].id}>
-                Próxima missão
-              </button>
-            )}
-            {mode === "puzzle" && (
-              <button type="button" onClick={goToNextPuzzle} disabled={puzzle.id === puzzles[puzzles.length - 1].id}>
-                Próximo puzzle
-              </button>
-            )}
+            {mode === "mission" && <button type="button" onClick={goToNextMission} disabled={mission.id === missions[missions.length - 1].id}>Próxima missão</button>}
+            {mode === "puzzle" && <button type="button" onClick={goToNextPuzzle} disabled={puzzle.id === puzzles[puzzles.length - 1].id}>Próximo puzzle</button>}
           </div>
 
-          {mode === "mission" && isMissionComplete && (
-            <div className="success-card">
-              <strong>Missão concluída</strong>
-              <span>{mission.successMessage}</span>
-            </div>
-          )}
-
-          {mode === "puzzle" && isPuzzleComplete && (
-            <div className="success-card">
-              <strong>Puzzle concluído</strong>
-              <span>{puzzle.successMessage}</span>
-            </div>
-          )}
+          {mode === "mission" && isMissionComplete && <div className="success-card"><strong>Missão concluída</strong><span>{mission.successMessage}</span></div>}
+          {mode === "puzzle" && isPuzzleComplete && <div className="success-card"><strong>Puzzle concluído</strong><span>{puzzle.successMessage}</span></div>}
         </section>
 
         <RightPanelTabs

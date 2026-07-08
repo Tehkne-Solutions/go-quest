@@ -18,7 +18,6 @@ export function BoardCell({
   onClick
 }: BoardCellProps) {
   const isEmpty = cell.state === "EMPTY";
-  const roleClass = cell.character ? `board-cell--${cell.character.role.toLowerCase()}` : "";
 
   return (
     <button
@@ -26,8 +25,7 @@ export function BoardCell({
         "board-cell",
         isExpected ? "board-cell--target" : "",
         isFormation ? "board-cell--formation" : "",
-        isSelected ? "board-cell--selected" : "",
-        roleClass
+        isSelected ? "board-cell--selected" : ""
       ].join(" ")}
       type="button"
       onClick={() => onClick(cell.position)}

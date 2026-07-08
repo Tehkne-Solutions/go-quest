@@ -4,7 +4,7 @@ import { App } from "./app/App";
 import "./styles/globals.css";
 import "./styles/sprint2.css";
 import "./styles/world.css";
-import "./styles/isometric.css";
+import "./styles/sprint5.2-full-visual.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

@@ -18,7 +18,6 @@ function samePosition(a?: Position, b?: Position): boolean {
 
 function hasConnectedAlly(board: Board, position: Position): boolean {
   const cell = board[position.y][position.x];
-
   if (cell.state === "EMPTY") return false;
 
   const directions = [

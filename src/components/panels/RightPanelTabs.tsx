@@ -58,11 +58,7 @@ export function RightPanelTabs({
         {activeTab === "unit" && <CharacterPanel board={board} character={selectedCharacter} />}
         {activeTab === "dev" && <TutorDevPanel event={selectedEvent} devGoal={devGoal} />}
         {activeTab === "debug" && (
-          <TutorEventLog
-            events={events}
-            selectedIndex={selectedEventIndex}
-            onSelect={onSelectEvent}
-          />
+          <TutorEventLog events={events} selectedIndex={selectedEventIndex} onSelect={onSelectEvent} />
         )}
         {activeTab === "codex" && <CodexPanel />}
       </div>
