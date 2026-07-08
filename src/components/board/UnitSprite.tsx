@@ -42,8 +42,8 @@ export function UnitSprite({
       data-role={roleLabel[role]}
     >
       <span className="unit-ground-shadow" />
-      <span className="unit-team-ring" />
-      {formation && <span className="unit-formation-banner" />}
+      <span className="unit-base-disc" />
+      {formation && <span className="unit-formation-badge" />}
       <img className="unit-sprite-img" src={roleAsset[role]} alt="" draggable={false} />
     </span>
   );
