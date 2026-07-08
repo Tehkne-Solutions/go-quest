@@ -1,0 +1,103 @@
+.stone--unit {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: clamp(64px, 9vw, 104px) !important;
+  height: clamp(86px, 12vw, 136px) !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.48));
+}
+
+.unit-sprite {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 50% 88%;
+  animation: spriteEnter 380ms cubic-bezier(0.2, 0.9, 0.2, 1), spriteIdle 2.4s ease-in-out 420ms infinite;
+}
+
+.board-stage--iso .stone--unit,
+.board-stage--cinematic .stone--unit,
+.board-stage--rotated .stone--unit {
+  transform: translateZ(48px) rotateX(-56deg) rotateZ(38deg) scale(1.18);
+}
+
+.board-stage--cinematic .stone--unit {
+  transform: translateZ(54px) rotateX(-68deg) rotateZ(18deg) scale(1.25);
+}
+
+.board-stage--rotated .stone--unit {
+  transform: translateZ(48px) rotateX(-55deg) rotateZ(-42deg) scale(1.18);
+}
+
+.stone--formation .unit-sprite {
+  filter: drop-shadow(0 0 16px rgba(255, 216, 128, 0.56));
+}
+
+.stone--formation::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: 4px;
+  width: 76%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 190, 90, 0.78), transparent 70%);
+  filter: blur(2px);
+}
+
+.sprite-role {
+  transform-origin: 50% 90%;
+}
+
+.unit-role-scout .unit-sprite { --class-glow: #78ff8d; }
+.unit-role-hunter .unit-sprite { --class-glow: #ffb56b; }
+.unit-role-guard .unit-sprite { --class-glow: #93c8ff; }
+.unit-role-link .unit-sprite { --class-glow: #c083ff; }
+.unit-role-builder .unit-sprite { --class-glow: #ffd073; }
+.unit-role-raider .unit-sprite { --class-glow: #ff654d; }
+
+.unit-role-link .unit-sprite {
+  filter: drop-shadow(0 0 12px rgba(190, 126, 255, 0.42));
+}
+
+.unit-role-guard .unit-sprite {
+  filter: drop-shadow(0 0 10px rgba(142, 192, 255, 0.32));
+}
+
+.unit-role-raider .unit-sprite {
+  filter: drop-shadow(0 0 10px rgba(255, 92, 64, 0.35));
+}
+
+@keyframes spriteEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spriteIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@media (max-width: 820px) {
+  .board-stage--iso .stone--unit,
+  .board-stage--cinematic .stone--unit,
+  .board-stage--rotated .stone--unit {
+    transform: translateZ(0) scale(1);
+  }
+}
+
+@media (max-width: 680px) {
+  .stone--unit {
+    width: clamp(46px, 15vw, 68px) !important;
+    height: clamp(64px, 20vw, 92px) !important;
+  }
+}
