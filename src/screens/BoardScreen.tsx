@@ -48,21 +48,25 @@ function getNextMissionId(current: MissionId): MissionId {
   return missions[Math.min(index + 1, missions.length - 1)].id;
 }
 
+function emptyProgress(): ProgressState {
+  return { xp: 0, completedMissions: [], medals: [] };
+}
+
 function loadProgress(): ProgressState {
   if (typeof window === "undefined") {
-    return { xp: 0, completedMissions: [], medals: [] };
+    return emptyProgress();
   }
 
   try {
     const saved = window.localStorage.getItem(progressStorageKey);
 
     if (!saved) {
-      return { xp: 0, completedMissions: [], medals: [] };
+      return emptyProgress();
     }
 
     return JSON.parse(saved) as ProgressState;
   } catch {
-    return { xp: 0, completedMissions: [], medals: [] };
+    return emptyProgress();
   }
 }
 
@@ -84,6 +88,7 @@ export function BoardScreen() {
   const [showTarget, setShowTarget] = useState(true);
   const [boardCamera, setBoardCamera] = useState<BoardCamera>("iso");
   const [selectedCharacter, setSelectedCharacter] = useState<StoneCharacter | undefined>();
+  const [hasPlayedCurrentRun, setHasPlayedCurrentRun] = useState(false);
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
 
   const selectedEvent = tutorEvents[selectedEventIndex];
@@ -102,9 +107,23 @@ export function BoardScreen() {
     setTutorEvents([]);
     setSelectedEventIndex(0);
     setSelectedCharacter(undefined);
+    setHasPlayedCurrentRun(false);
     setMessage("Sensei Grid: missão carregada. Observe o objetivo e teste no tabuleiro.");
     setCaptures({ BLACK: 0, WHITE: 0 });
     setShowTarget(true);
+  }
+
+  function replayMission() {
+    resetMission(mission.id);
+    setMessage("Missão pronta para replay. O progresso continua salvo, mas o tabuleiro foi reiniciado.");
+  }
+
+  function clearProgress() {
+    const clean = emptyProgress();
+    window.localStorage.removeItem(progressStorageKey);
+    setProgress(clean);
+    setMessage("Progresso local limpo. Você pode testar as classes do zero.");
+    resetMission("breath");
   }
 
   function completeMission() {
@@ -134,8 +153,8 @@ export function BoardScreen() {
       return;
     }
 
-    if (isMissionComplete) {
-      setMessage("Missão já concluída. Avance para a próxima missão para convocar outra classe.");
+    if (isMissionComplete && hasPlayedCurrentRun) {
+      setMessage("Missão já concluída neste replay. Use Rejogar missão ou avance para a próxima classe.");
       return;
     }
 
@@ -153,6 +172,7 @@ export function BoardScreen() {
 
     setBoard(result.board);
     setSelectedCharacter(actor);
+    setHasPlayedCurrentRun(true);
 
     if (result.captured.length > 0) {
       setCaptures((current) => ({
@@ -181,7 +201,7 @@ export function BoardScreen() {
     <main className="app-shell app-shell--game">
       <header className="hero game-hero">
         <div>
-          <p className="eyebrow">GoQuest Sprint 4</p>
+          <p className="eyebrow">GoQuest Sprint 4.1</p>
           <h1>Reino do Tabuleiro</h1>
           <p>
             Go como campanha medieval: unidades entram no campo, formam companhias e revelam a lógica do motor.
@@ -193,7 +213,8 @@ export function BoardScreen() {
       <nav className="game-menu" aria-label="Menu de jogo">
         <button type="button" onClick={() => resetMission("breath")}>Jornada</button>
         <button type="button" onClick={() => setShowTarget((value) => !value)}>{showTarget ? "Dica ativa" : "Dica oculta"}</button>
-        <button type="button" onClick={() => resetMission()}>Reiniciar</button>
+        <button type="button" onClick={replayMission}>Rejogar missão</button>
+        <button type="button" onClick={clearProgress}>Limpar progresso</button>
       </nav>
 
       <section className="status-bar" aria-label="Estado do jogo">
@@ -276,8 +297,8 @@ export function BoardScreen() {
           />
 
           <div className="board-actions">
-            <button type="button" onClick={() => resetMission()}>
-              Reiniciar missão
+            <button type="button" onClick={replayMission}>
+              Rejogar missão
             </button>
             <button type="button" onClick={goToNextMission} disabled={mission.id === missions[missions.length - 1].id}>
               Próxima missão
