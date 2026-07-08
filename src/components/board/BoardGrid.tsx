@@ -7,6 +7,7 @@ type BoardGridProps = {
   expectedMove?: Position;
   showTarget: boolean;
   camera?: BoardCamera;
+  selectedPosition?: Position;
   onCellClick: (position: Position) => void;
 };
 
@@ -39,6 +40,7 @@ export function BoardGrid({
   expectedMove,
   showTarget,
   camera = "iso",
+  selectedPosition,
   onCellClick
 }: BoardGridProps) {
   return (
@@ -51,6 +53,7 @@ export function BoardGrid({
               cell={cell}
               isExpected={showTarget && samePosition(cell.position, expectedMove)}
               isFormation={hasConnectedAlly(board, cell.position)}
+              isSelected={samePosition(cell.position, selectedPosition)}
               onClick={onCellClick}
             />
           ))

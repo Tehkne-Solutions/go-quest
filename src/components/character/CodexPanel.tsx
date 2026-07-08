@@ -4,12 +4,12 @@ import type { CharacterRole } from "../../types/character";
 const roles = Object.entries(roleLabels) as Array<[CharacterRole, string]>;
 
 const roleDescriptions: Record<CharacterRole, string> = {
-  SCOUT: "Explora pontos livres e ensina abertura de mapa.",
-  HUNTER: "Fecha rotas de fuga e ensina captura.",
-  GUARD: "Protege grupos e ensina defesa.",
-  LINK: "Une tropas separadas e ensina conexão.",
-  BUILDER: "Constrói espaço e ensina território.",
-  RAIDER: "Invade brechas e ensina pressão."
+  SCOUT: "Batedor ágil. Explora pontos livres, abre visão e ensina liberdade.",
+  HUNTER: "Caçador tático. Fecha rotas de fuga e ensina captura.",
+  GUARD: "Guardião blindado. Protege grupos, segura pressão e ensina defesa.",
+  LINK: "Conector arcano. Une tropas separadas e ensina conexão.",
+  BUILDER: "Arquiteto anão. Constrói estruturas e ensina território.",
+  RAIDER: "Saqueador orc. Invade brechas e ensina pressão."
 };
 
 export function CodexPanel() {
@@ -18,7 +18,7 @@ export function CodexPanel() {
       <p className="eyebrow">Codex de facções</p>
       <h2>Companhias do tabuleiro</h2>
       <p>
-        As regras continuam sendo Go. A fantasia medieval serve para transformar cada função estratégica em uma unidade memorável.
+        As regras continuam sendo Go. A fantasia medieval transforma cada função estratégica em uma unidade memorável.
       </p>
 
       <div className="codex-list">

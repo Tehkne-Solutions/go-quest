@@ -1,12 +1,6 @@
 import type { PlayerColor } from "./game";
 
-export type CharacterRole =
-  | "SCOUT"
-  | "HUNTER"
-  | "GUARD"
-  | "LINK"
-  | "BUILDER"
-  | "RAIDER";
+export type CharacterRole = "SCOUT" | "HUNTER" | "GUARD" | "LINK" | "BUILDER" | "RAIDER";
 
 export type CharacterFaction = "CROWN" | "VEIL";
 

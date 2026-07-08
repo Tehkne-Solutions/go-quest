@@ -6,9 +6,10 @@ type StoneViewProps = {
   color: PlayerColor;
   character?: StoneCharacter;
   formation?: boolean;
+  selected?: boolean;
 };
 
-export function StoneView({ color, character, formation = false }: StoneViewProps) {
+export function StoneView({ color, character, formation = false, selected = false }: StoneViewProps) {
   const label = character
     ? `${character.name} - ${character.title}`
     : `Unidade ${color === "BLACK" ? "preta" : "branca"}`;
@@ -16,11 +17,11 @@ export function StoneView({ color, character, formation = false }: StoneViewProp
 
   return (
     <span
-      className={`stone stone--${color.toLowerCase()} stone--unit unit-role-${role.toLowerCase()} ${formation ? "stone--formation" : ""}`}
+      className={`stone stone--${color.toLowerCase()} stone--sprite unit-role-${role.toLowerCase()} ${formation ? "stone--formation" : ""} ${selected ? "stone--selected" : ""}`}
       aria-label={label}
       title={label}
     >
-      <UnitSprite role={role} color={color} />
+      <UnitSprite role={role} color={color} formation={formation} selected={selected} />
     </span>
   );
 }

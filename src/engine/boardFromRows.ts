@@ -19,10 +19,7 @@ export function boardFromRows(rows: string[]): Board {
         return {
           position,
           state,
-          character:
-            state === "EMPTY"
-              ? undefined
-              : createDefaultCharacter(state as PlayerColor, position)
+          character: state === "EMPTY" ? undefined : createDefaultCharacter(state as PlayerColor, position)
         };
       })
   );

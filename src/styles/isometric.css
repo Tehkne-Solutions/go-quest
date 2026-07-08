@@ -24,9 +24,10 @@
 }
 
 .board-stage {
-  width: min(100%, 620px);
+  width: min(100%, 720px);
   margin: 0 auto;
-  perspective: 1100px;
+  padding: 36px 0 44px;
+  perspective: 1200px;
   perspective-origin: 50% 30%;
   transition: perspective-origin 360ms ease;
 }
@@ -76,7 +77,6 @@
   position: absolute;
   inset: 6px;
   border-radius: 18px;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 224, 147, 0.14), transparent 34%), radial-gradient(circle at 70% 70%, rgba(87, 173, 255, 0.1), transparent 38%);
   pointer-events: none;
 }
 
@@ -94,11 +94,6 @@
   background: radial-gradient(circle, rgba(242, 199, 110, 0.5), transparent 68%);
   transform: translateZ(3px);
   pointer-events: none;
-}
-
-.board-cell--formation .intersection {
-  background: rgba(119, 214, 141, 0.85);
-  box-shadow: 0 0 16px rgba(119, 214, 141, 0.7);
 }
 
 .board-header-actions {

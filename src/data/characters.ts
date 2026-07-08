@@ -23,48 +23,48 @@ const roleDetails: Record<CharacterRole, Omit<StoneCharacter, "id" | "color" | "
   SCOUT: {
     role: "SCOUT",
     title: "Batedor dos Cantos",
-    portraitGlyph: "♞",
-    weaponGlyph: "⌖",
+    portraitGlyph: "✦",
+    weaponGlyph: "✦",
     personality: "Curioso, veloz e bom para abrir caminho no mapa.",
     battleLine: "Eu avanço primeiro para revelar o território."
   },
   HUNTER: {
     role: "HUNTER",
     title: "Caçador de Liberdades",
-    portraitGlyph: "⚔",
-    weaponGlyph: "🗡",
+    portraitGlyph: "➶",
+    weaponGlyph: "➶",
     personality: "Calculista e preciso, fecha rotas de fuga sem desperdício.",
     battleLine: "Cada saída fechada aproxima o inimigo da queda."
   },
   GUARD: {
     role: "GUARD",
     title: "Guardião do Portão",
-    portraitGlyph: "♜",
-    weaponGlyph: "🛡",
+    portraitGlyph: "◆",
+    weaponGlyph: "◆",
     personality: "Leal, firme e focado em proteger o grupo.",
     battleLine: "Enquanto eu estiver aqui, o squad respira."
   },
   LINK: {
     role: "LINK",
     title: "Elo da Companhia",
-    portraitGlyph: "♟",
-    weaponGlyph: "⛓",
+    portraitGlyph: "✧",
+    weaponGlyph: "✧",
     personality: "Diplomático e estratégico, une tropas separadas.",
     battleLine: "Dois grupos unidos viram uma companhia."
   },
   BUILDER: {
     role: "BUILDER",
     title: "Arquiteto de Territórios",
-    portraitGlyph: "♛",
-    weaponGlyph: "⚒",
+    portraitGlyph: "⚙",
+    weaponGlyph: "⚙",
     personality: "Paciente e visionário, transforma espaço em reino.",
     battleLine: "Não luto por impulso. Eu construo domínio."
   },
   RAIDER: {
     role: "RAIDER",
     title: "Saqueador da Névoa",
-    portraitGlyph: "♝",
-    weaponGlyph: "☄",
+    portraitGlyph: "▲",
+    weaponGlyph: "▲",
     personality: "Agressivo, instável e perigoso quando encontra brechas.",
     battleLine: "Onde há uma abertura, eu invado."
   }
@@ -98,7 +98,7 @@ export function createStoneCharacter(
 
   return {
     ...details,
-    id: `${faction}_${role}_${position.x}_${position.y}_${seed}`,
+    id: `${faction}_${role}_${position.x}_${position.y}_${seed}_${Date.now()}`,
     color,
     faction,
     name

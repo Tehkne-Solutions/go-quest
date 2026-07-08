@@ -1,7 +1,7 @@
 import type { Board, PlayerColor, Position, StoneGroup } from "../types/game";
 import { getNeighbors } from "./getNeighbors";
 
-function positionKey(position: Position): string {
+function key(position: Position): string {
   return `${position.x},${position.y}`;
 }
 
@@ -9,7 +9,7 @@ export function findGroup(board: Board, start: Position): StoneGroup {
   const startCell = board[start.y][start.x];
 
   if (startCell.state === "EMPTY") {
-    throw new Error("Não existe pedra nessa posição.");
+    throw new Error("Não existe unidade nessa posição.");
   }
 
   const color = startCell.state as PlayerColor;
@@ -20,44 +20,25 @@ export function findGroup(board: Board, start: Position): StoneGroup {
 
   while (stack.length > 0) {
     const current = stack.pop();
+    if (!current) continue;
 
-    if (!current) {
-      continue;
-    }
+    const currentKey = key(current);
+    if (visited.has(currentKey)) continue;
+    visited.add(currentKey);
 
-    const key = positionKey(current);
-
-    if (visited.has(key)) {
-      continue;
-    }
-
-    visited.add(key);
-
-    const currentCell = board[current.y][current.x];
-
-    if (currentCell.state !== color) {
-      continue;
-    }
+    const cell = board[current.y][current.x];
+    if (cell.state !== color) continue;
 
     stones.push(current);
 
     for (const neighbor of getNeighbors(board, current)) {
       const neighborCell = board[neighbor.y][neighbor.x];
-      const neighborKey = positionKey(neighbor);
+      const neighborKey = key(neighbor);
 
-      if (neighborCell.state === "EMPTY") {
-        libertiesMap.set(neighborKey, neighbor);
-      }
-
-      if (neighborCell.state === color && !visited.has(neighborKey)) {
-        stack.push(neighbor);
-      }
+      if (neighborCell.state === "EMPTY") libertiesMap.set(neighborKey, neighbor);
+      if (neighborCell.state === color && !visited.has(neighborKey)) stack.push(neighbor);
     }
   }
 
-  return {
-    color,
-    stones,
-    liberties: Array.from(libertiesMap.values())
-  };
+  return { color, stones, liberties: Array.from(libertiesMap.values()) };
 }

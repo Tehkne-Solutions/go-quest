@@ -7,9 +7,7 @@ function getCharacterPosition(board: Board, character?: StoneCharacter): Positio
 
   for (const row of board) {
     for (const cell of row) {
-      if (cell.character?.id === character.id) {
-        return cell.position;
-      }
+      if (cell.character?.id === character.id) return cell.position;
     }
   }
 
@@ -21,9 +19,22 @@ type CharacterPanelProps = {
   character?: StoneCharacter;
 };
 
+const factionLabel = {
+  CROWN: "Coroa de Ônix",
+  VEIL: "Véu de Marfim"
+};
+
 export function CharacterPanel({ board, character }: CharacterPanelProps) {
   const position = getCharacterPosition(board, character);
   const group = position ? findGroup(board, position) : undefined;
+  const formationLevel = group ? Math.max(1, group.stones.length) : 0;
+  const risk = group
+    ? group.liberties.length <= 1
+      ? "Crítico"
+      : group.liberties.length <= 2
+        ? "Atenção"
+        : "Seguro"
+    : "-";
 
   return (
     <section className="panel character-panel">
@@ -43,7 +54,7 @@ export function CharacterPanel({ board, character }: CharacterPanelProps) {
 
           <div className="character-grid">
             <span>Facção</span>
-            <strong>{character.faction === "CROWN" ? "Coroa de Onix" : "Véu de Marfim"}</strong>
+            <strong>{factionLabel[character.faction]}</strong>
 
             <span>Papel</span>
             <strong>{character.role}</strong>
@@ -53,6 +64,12 @@ export function CharacterPanel({ board, character }: CharacterPanelProps) {
 
             <span>Rotas</span>
             <strong>{group ? group.liberties.length : 0}</strong>
+
+            <span>Formação</span>
+            <strong>{formationLevel > 1 ? `${formationLevel} unidades` : "Solo"}</strong>
+
+            <span>Risco</span>
+            <strong>{risk}</strong>
           </div>
 
           <p>{character.personality}</p>

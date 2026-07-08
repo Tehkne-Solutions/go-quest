@@ -12,9 +12,7 @@ export function TutorEventLog({ events, selectedIndex, onSelect }: TutorEventLog
       <p className="eyebrow">Passos da jogada</p>
       <h2>Debug narrado</h2>
 
-      {events.length === 0 && (
-        <p className="muted">Nenhuma jogada ainda. Clique no tabuleiro para começar.</p>
-      )}
+      {events.length === 0 && <p className="muted">Nenhuma jogada ainda. Clique no tabuleiro para começar.</p>}
 
       <div className="event-list">
         {events.map((event, index) => (

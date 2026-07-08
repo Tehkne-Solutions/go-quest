@@ -14,10 +14,7 @@ export function TutorDevPanel({ event, devGoal }: TutorDevPanelProps) {
       {!event && (
         <>
           <p>{devGoal}</p>
-          <p>
-            Faça uma jogada para ver como o tabuleiro, a matriz e as funções se
-            conectam.
-          </p>
+          <p>Faça uma jogada para ver o tabuleiro, a matriz e as funções se conectando.</p>
         </>
       )}
 

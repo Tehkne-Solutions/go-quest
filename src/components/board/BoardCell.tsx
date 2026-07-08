@@ -5,6 +5,7 @@ type BoardCellProps = {
   cell: BoardCellType;
   isExpected?: boolean;
   isFormation?: boolean;
+  isSelected?: boolean;
   onClick: (position: Position) => void;
 };
 
@@ -12,6 +13,7 @@ export function BoardCell({
   cell,
   isExpected = false,
   isFormation = false,
+  isSelected = false,
   onClick
 }: BoardCellProps) {
   const isEmpty = cell.state === "EMPTY";
@@ -19,14 +21,21 @@ export function BoardCell({
 
   return (
     <button
-      className={`board-cell ${isExpected ? "board-cell--target" : ""} ${isFormation ? "board-cell--formation" : ""} ${roleClass}`}
+      className={`board-cell ${isExpected ? "board-cell--target" : ""} ${isFormation ? "board-cell--formation" : ""} ${isSelected ? "board-cell--selected" : ""} ${roleClass}`}
       type="button"
       onClick={() => onClick(cell.position)}
       aria-label={`Casa x:${cell.position.x}, y:${cell.position.y}`}
     >
       <span className="intersection" />
       {isFormation && <span className="camp-marker" aria-hidden="true" />}
-      {!isEmpty && <StoneView color={cell.state} character={cell.character} formation={isFormation} />}
+      {!isEmpty && (
+        <StoneView
+          color={cell.state}
+          character={cell.character}
+          formation={isFormation}
+          selected={isSelected}
+        />
+      )}
     </button>
   );
 }

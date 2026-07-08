@@ -36,8 +36,7 @@ export function playMove(
         {
           title: "Jogada bloqueada",
           goExplanation: "Você só pode mover tropas para casas vazias do campo.",
-          devExplanation:
-            "Antes de alterar a matriz, o motor verificou que essa célula não está com estado EMPTY.",
+          devExplanation: "Antes de alterar a matriz, o motor verificou que essa célula não está com estado EMPTY.",
           codeFocus: "if (cell.state !== 'EMPTY')"
         }
       ]
@@ -45,32 +44,24 @@ export function playMove(
   }
 
   let nextBoard = structuredClone(board) as Board;
-
-  nextBoard[position.y][position.x] = {
-    position,
-    state: color,
-    character
-  };
+  nextBoard[position.y][position.x] = { position, state: color, character };
 
   const opponent: PlayerColor = color === "BLACK" ? "WHITE" : "BLACK";
   const neighbors = getNeighbors(nextBoard, position);
   let captured: Position[] = [];
-
   const actorName = character ? `${character.name}, ${character.title}` : `pedra ${colorLabel(color)}`;
 
   const tutorEvents: TutorEvent[] = [
     {
       title: "Personagem convocado",
-      goExplanation: `${actorName} entrou no tabuleiro. No Go oficial isso ainda é uma pedra ${colorLabel(color)}, mas no GoQuest ela ganha papel de unidade medieval para facilitar a leitura estratégica.`,
-      devExplanation: `A célula board[${position.y}][${position.x}] mudou de EMPTY para ${color} e recebeu um objeto character opcional.`,
+      goExplanation: `${actorName} entrou no tabuleiro. No Go oficial isso ainda é uma pedra ${colorLabel(color)}, mas no GoQuest ela ganha papel de unidade medieval.`,
+      devExplanation: `A célula board[${position.y}][${position.x}] mudou de EMPTY para ${color} e recebeu um objeto character.`,
       codeFocus: "nextBoard[position.y][position.x] = { position, state: color, character }"
     },
     {
       title: "Vizinhos analisados",
-      goExplanation:
-        "A unidade só respira e se conecta pelas quatro direções do mapa: norte, leste, sul e oeste. Diagonais não contam.",
-      devExplanation:
-        "O motor chamou getNeighbors() para descobrir quais casas encostam na unidade dentro do tabuleiro.",
+      goExplanation: "A unidade só respira e se conecta pelas quatro direções do mapa: norte, leste, sul e oeste. Diagonais não contam.",
+      devExplanation: "O motor chamou getNeighbors() para descobrir quais casas encostam na unidade dentro do tabuleiro.",
       codeFocus: "const neighbors = getNeighbors(nextBoard, position)"
     }
   ];
@@ -83,10 +74,8 @@ export function playMove(
 
       tutorEvents.push({
         title: "Companhia inimiga analisada",
-        goExplanation:
-          "Depois da sua jogada, o jogo verificou se alguma tropa inimiga ficou sem rotas de fuga.",
-        devExplanation:
-          "O motor chamou findGroup() para calcular unidades conectadas e liberdades do grupo inimigo.",
+        goExplanation: "Depois da sua jogada, o jogo verificou se alguma tropa inimiga ficou sem rotas de fuga.",
+        devExplanation: "O motor chamou findGroup() para calcular unidades conectadas e liberdades do grupo inimigo.",
         codeFocus: "const enemyGroup = findGroup(nextBoard, neighbor)"
       });
 
@@ -96,10 +85,8 @@ export function playMove(
 
         tutorEvents.push({
           title: "Cerco completo",
-          goExplanation:
-            "A companhia inimiga perdeu todas as rotas de fuga e foi removida do campo de batalha.",
-          devExplanation:
-            "Como enemyGroup.liberties.length era 0, o motor chamou removeGroup() e transformou aquelas células em EMPTY.",
+          goExplanation: "A companhia inimiga perdeu todas as rotas de fuga e foi removida do campo de batalha.",
+          devExplanation: "Como enemyGroup.liberties.length era 0, o motor chamou removeGroup() e transformou aquelas células em EMPTY.",
           codeFocus: "if (enemyGroup.liberties.length === 0) removeGroup(...)"
         });
       }
@@ -115,8 +102,7 @@ export function playMove(
       ownGroup.liberties.length === 1
         ? "Alerta de batalha: essa companhia está em atari, com apenas uma rota de fuga."
         : `Essa companhia possui ${ownGroup.liberties.length} rota(s) de fuga compartilhadas.`,
-    devExplanation:
-      "O motor encontrou o grupo da unidade jogada e contou todas as casas vazias conectadas a ele.",
+    devExplanation: "O motor encontrou o grupo da unidade jogada e contou todas as casas vazias conectadas a ele.",
     codeFocus: "const ownGroup = findGroup(nextBoard, position)"
   });
 
@@ -130,10 +116,8 @@ export function playMove(
         ...tutorEvents,
         {
           title: "Unidade sem rota de fuga",
-          goExplanation:
-            "Essa unidade entraria no campo já cercada e não capturaria ninguém.",
-          devExplanation:
-            "O motor detectou que o próprio grupo ficou com 0 liberdades e rejeitou a jogada.",
+          goExplanation: "Essa unidade entraria no campo já cercada e não capturaria ninguém.",
+          devExplanation: "O motor detectou que o próprio grupo ficou com 0 liberdades e rejeitou a jogada.",
           codeFocus: "if (ownGroup.liberties.length === 0 && captured.length === 0)"
         }
       ]
@@ -156,8 +140,7 @@ export function playMove(
           captured.length > 0
             ? "Sua jogada fechou todas as rotas de fuga de uma companhia inimiga. Isso é uma captura."
             : "Sua unidade entrou no mapa e ainda possui espaço para respirar.",
-        devExplanation:
-          "O motor retornou um novo estado de tabuleiro para a interface renderizar.",
+        devExplanation: "O motor retornou um novo estado de tabuleiro para a interface renderizar.",
         codeFocus: "return { board: nextBoard, success: true, captured, message }"
       }
     ]

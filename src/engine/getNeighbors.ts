@@ -20,9 +20,6 @@ export function isInsideBoard(board: Board, position: Position): boolean {
 
 export function getNeighbors(board: Board, position: Position): Position[] {
   return directions
-    .map((direction) => ({
-      x: position.x + direction.x,
-      y: position.y + direction.y
-    }))
+    .map((direction) => ({ x: position.x + direction.x, y: position.y + direction.y }))
     .filter((nextPosition) => isInsideBoard(board, nextPosition));
 }
