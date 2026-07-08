@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BoardGrid } from "../components/board/BoardGrid";
 import { CameraControls, type BoardCamera } from "../components/board/CameraControls";
-import { CharacterPanel } from "../components/character/CharacterPanel";
-import { CodexPanel } from "../components/character/CodexPanel";
-import { TutorDevPanel } from "../components/tutor/TutorDevPanel";
-import { TutorEventLog } from "../components/tutor/TutorEventLog";
+import { RightPanelTabs } from "../components/panels/RightPanelTabs";
 import { TutorGoPanel } from "../components/tutor/TutorGoPanel";
 import { createStoneCharacter, getRoleForMission } from "../data/characters";
 import { missions } from "../data/missions";
@@ -15,8 +12,8 @@ import type { CharacterRole, StoneCharacter } from "../types/character";
 import type { Board, CaptureCounter, MissionId, PlayerColor, Position } from "../types/game";
 import type { TutorEvent } from "../types/tutor";
 
-type MedalId = "breath-master" | "first-capture" | "squad-link" | "puzzle-initiate";
-type GameMode = "mission" | "puzzle" | "free";
+type MedalId = "breath-master" | "first-capture" | "squad-link";
+type Mode = "mission" | "puzzle" | "free";
 
 type ProgressState = {
   xp: number;
@@ -25,13 +22,12 @@ type ProgressState = {
   medals: MedalId[];
 };
 
-const progressStorageKey = "goquest-progress-v4-2";
+const progressStorageKey = "goquest-progress-v4";
 
 const medalLabels: Record<MedalId, string> = {
   "breath-master": "Guardião das Liberdades",
   "first-capture": "Primeira Captura",
-  "squad-link": "Conector de Squads",
-  "puzzle-initiate": "Iniciado dos Puzzles"
+  "squad-link": "Conector de Squads"
 };
 
 const missionRewards: Record<MissionId, { xp: number; medal: MedalId }> = {
@@ -43,10 +39,10 @@ const missionRewards: Record<MissionId, { xp: number; medal: MedalId }> = {
 const freeLesson = {
   title: "Campo Livre",
   concept: "Experimentação",
-  intro: "Teste unidades, cerco, conexão e captura sem objetivo fixo.",
-  goal: "Coloque tropas no tabuleiro e observe o Tutor Dev.",
+  intro: "Teste formações, cercos, conexões e captura sem objetivo fixo.",
+  goal: "Coloque unidades no tabuleiro e observe o Tutor Dev.",
   successMessage: "Experimento registrado.",
-  devGoal: "Explorar playMove(), findGroup(), getNeighbors() e removeGroup()."
+  devGoal: "Explorar matriz, vizinhos, grupos, liberdades, captura e formação."
 };
 
 function samePosition(a?: Position, b?: Position): boolean {
@@ -62,11 +58,6 @@ function getNextMissionId(current: MissionId): MissionId {
   return missions[Math.min(index + 1, missions.length - 1)].id;
 }
 
-function getNextPuzzleId(current: string): string {
-  const index = puzzles.findIndex((puzzle) => puzzle.id === current);
-  return puzzles[Math.min(index + 1, puzzles.length - 1)].id;
-}
-
 function emptyProgress(): ProgressState {
   return { xp: 0, completedMissions: [], completedPuzzles: [], medals: [] };
 }
@@ -75,9 +66,14 @@ function loadProgress(): ProgressState {
   if (typeof window === "undefined") return emptyProgress();
 
   try {
-    const saved = window.localStorage.getItem(progressStorageKey);
+    const saved =
+      window.localStorage.getItem(progressStorageKey) ??
+      window.localStorage.getItem("goquest-progress-v1");
+
     if (!saved) return emptyProgress();
+
     const parsed = JSON.parse(saved) as Partial<ProgressState>;
+
     return {
       xp: parsed.xp ?? 0,
       completedMissions: parsed.completedMissions ?? [],
@@ -91,25 +87,36 @@ function loadProgress(): ProgressState {
 
 function roleForPuzzle(concept: string): CharacterRole {
   const text = concept.toLowerCase();
+
   if (text.includes("captura") || text.includes("cerco")) return "HUNTER";
-  if (text.includes("conect") || text.includes("corte")) return "LINK";
-  if (text.includes("atari") || text.includes("salvar")) return "GUARD";
+  if (text.includes("conex") || text.includes("conectar")) return "LINK";
   if (text.includes("territ")) return "BUILDER";
+  if (text.includes("atari") || text.includes("salvar")) return "GUARD";
   return "SCOUT";
 }
 
 export function BoardScreen() {
-  const [mode, setMode] = useState<GameMode>("mission");
+  const [mode, setMode] = useState<Mode>("mission");
   const [missionId, setMissionId] = useState<MissionId>("breath");
   const [puzzleId, setPuzzleId] = useState(puzzles[0].id);
-  const mission = useMemo(() => missions.find((item) => item.id === missionId) ?? missions[0], [missionId]);
-  const puzzle = useMemo(() => puzzles.find((item) => item.id === puzzleId) ?? puzzles[0], [puzzleId]);
+  const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
+
+  const mission = useMemo(
+    () => missions.find((item) => item.id === missionId) ?? missions[0],
+    [missionId]
+  );
+
+  const puzzle = useMemo(
+    () => puzzles.find((item) => item.id === puzzleId) ?? puzzles[0],
+    [puzzleId]
+  );
+
   const activeLesson = mode === "mission" ? mission : mode === "puzzle" ? puzzle : freeLesson;
   const targetMove = mode === "mission" ? mission.expectedMove : mode === "puzzle" ? puzzle.solution : undefined;
 
   const [board, setBoard] = useState<Board>(() => mission.createInitialBoard());
   const [currentPlayer, setCurrentPlayer] = useState<PlayerColor>("BLACK");
-  const [message, setMessage] = useState("Sensei Grid: primeiro observe o mapa. Cada clique muda o estado do jogo.");
+  const [message, setMessage] = useState("O campo está pronto. Escolha uma ordem.");
   const [tutorEvents, setTutorEvents] = useState<TutorEvent[]>([]);
   const [selectedEventIndex, setSelectedEventIndex] = useState(0);
   const [captures, setCaptures] = useState<CaptureCounter>({ BLACK: 0, WHITE: 0 });
@@ -118,7 +125,6 @@ export function BoardScreen() {
   const [selectedCharacter, setSelectedCharacter] = useState<StoneCharacter | undefined>();
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
   const [hasPlayedCurrentRun, setHasPlayedCurrentRun] = useState(false);
-  const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
 
   const selectedEvent = tutorEvents[selectedEventIndex];
   const isMissionComplete = progress.completedMissions.includes(mission.id);
@@ -128,65 +134,75 @@ export function BoardScreen() {
     window.localStorage.setItem(progressStorageKey, JSON.stringify(progress));
   }, [progress]);
 
-  function bootBoard(nextBoard: Board, player: PlayerColor, text: string) {
-    setBoard(nextBoard);
-    setCurrentPlayer(player);
+  function loadMission(nextMissionId = mission.id) {
+    const nextMission = missions.find((item) => item.id === nextMissionId) ?? missions[0];
+
+    setMode("mission");
+    setMissionId(nextMission.id);
+    setBoard(nextMission.createInitialBoard());
+    setCurrentPlayer(nextMission.player);
     setTutorEvents([]);
     setSelectedEventIndex(0);
     setSelectedCharacter(undefined);
     setSelectedPosition(undefined);
     setHasPlayedCurrentRun(false);
-    setMessage(text);
+    setMessage("Missão carregada. Observe o objetivo e teste no tabuleiro.");
     setCaptures({ BLACK: 0, WHITE: 0 });
-  }
-
-  function loadMission(nextMissionId = mission.id) {
-    const nextMission = missions.find((item) => item.id === nextMissionId) ?? missions[0];
-    setMode("mission");
-    setMissionId(nextMission.id);
     setShowTarget(true);
-    bootBoard(nextMission.createInitialBoard(), nextMission.player, "Missão carregada. Observe o objetivo e teste no tabuleiro.");
   }
 
   function loadPuzzle(nextPuzzleId = puzzle.id) {
     const nextPuzzle = puzzles.find((item) => item.id === nextPuzzleId) ?? puzzles[0];
+
     setMode("puzzle");
     setPuzzleId(nextPuzzle.id);
+    setBoard(nextPuzzle.createInitialBoard());
+    setCurrentPlayer("BLACK");
+    setTutorEvents([]);
+    setSelectedEventIndex(0);
+    setSelectedCharacter(undefined);
+    setSelectedPosition(undefined);
+    setHasPlayedCurrentRun(false);
+    setMessage("Puzzle carregado. Encontre a melhor ordem.");
+    setCaptures({ BLACK: 0, WHITE: 0 });
     setShowTarget(true);
-    bootBoard(nextPuzzle.createInitialBoard(), "BLACK", "Puzzle carregado. Resolva a melhor ordem no campo.");
   }
 
-  function startFreeMode() {
+  function openFreeMode() {
     setMode("free");
+    setBoard(createBoard(5));
+    setCurrentPlayer("BLACK");
+    setTutorEvents([]);
+    setSelectedEventIndex(0);
+    setSelectedCharacter(undefined);
+    setSelectedPosition(undefined);
+    setHasPlayedCurrentRun(false);
+    setMessage("Campo livre aberto. Experimente formações e leia o Tutor Dev.");
+    setCaptures({ BLACK: 0, WHITE: 0 });
     setShowTarget(false);
-    bootBoard(createBoard(5), "BLACK", "Campo livre aberto. Experimente jogadas e leia a lógica no Tutor Dev.");
-  }
-
-  function replayCurrent() {
-    if (mode === "mission") loadMission(mission.id);
-    if (mode === "puzzle") loadPuzzle(puzzle.id);
-    if (mode === "free") startFreeMode();
   }
 
   function clearProgress() {
     window.localStorage.removeItem(progressStorageKey);
+    window.localStorage.removeItem("goquest-progress-v1");
     setProgress(emptyProgress());
-    setMode("mission");
-    setMissionId("breath");
-    const firstMission = missions[0];
-    setShowTarget(true);
-    bootBoard(firstMission.createInitialBoard(), firstMission.player, "Progresso local limpo. Você pode testar as classes do zero.");
+    loadMission("breath");
+    setMessage("Progresso local limpo. A campanha reiniciou.");
   }
 
   function completeMission() {
     const reward = missionRewards[mission.id];
+
     setProgress((current) => {
       if (current.completedMissions.includes(mission.id)) return current;
+
       return {
         ...current,
         xp: current.xp + reward.xp,
         completedMissions: [...current.completedMissions, mission.id],
-        medals: current.medals.includes(reward.medal) ? current.medals : [...current.medals, reward.medal]
+        medals: current.medals.includes(reward.medal)
+          ? current.medals
+          : [...current.medals, reward.medal]
       };
     });
   }
@@ -194,11 +210,11 @@ export function BoardScreen() {
   function completePuzzle() {
     setProgress((current) => {
       if (current.completedPuzzles.includes(puzzle.id)) return current;
+
       return {
         ...current,
         xp: current.xp + 35,
-        completedPuzzles: [...current.completedPuzzles, puzzle.id],
-        medals: current.medals.includes("puzzle-initiate") ? current.medals : [...current.medals, "puzzle-initiate"]
+        completedPuzzles: [...current.completedPuzzles, puzzle.id]
       };
     });
   }
@@ -213,12 +229,18 @@ export function BoardScreen() {
       return;
     }
 
-    if (mode !== "free" && hasPlayedCurrentRun && (isMissionComplete || isPuzzleComplete)) {
-      setMessage("Rodada já concluída neste replay. Use Rejogar, avance para a próxima etapa ou entre no Campo Livre.");
+    if (mode !== "free" && hasPlayedCurrentRun) {
+      setMessage("Rodada já concluída neste replay. Use Rejogar ou avance para outro desafio.");
       return;
     }
 
-    const role = mode === "mission" ? getRoleForMission(mission.id) : mode === "puzzle" ? roleForPuzzle(puzzle.concept) : "SCOUT";
+    const role =
+      mode === "mission"
+        ? getRoleForMission(mission.id)
+        : mode === "puzzle"
+          ? roleForPuzzle(puzzle.concept)
+          : "SCOUT";
+
     const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
     const result = playMove(board, position, currentPlayer, actor);
 
@@ -231,21 +253,22 @@ export function BoardScreen() {
     setBoard(result.board);
     setSelectedCharacter(actor);
     setSelectedPosition(position);
-    setHasPlayedCurrentRun(true);
+    setHasPlayedCurrentRun(mode !== "free");
 
     if (result.captured.length > 0) {
-      setCaptures((current) => ({ ...current, [currentPlayer]: current[currentPlayer] + result.captured.length }));
+      setCaptures((current) => ({
+        ...current,
+        [currentPlayer]: current[currentPlayer] + result.captured.length
+      }));
     }
 
-    const completedExpectedMove = samePosition(position, targetMove);
-
-    if (mode === "mission" && completedExpectedMove) {
+    if (samePosition(position, targetMove) && mode === "mission") {
       completeMission();
       setMessage(mission.successMessage);
       return;
     }
 
-    if (mode === "puzzle" && completedExpectedMove) {
+    if (samePosition(position, targetMove) && mode === "puzzle") {
       completePuzzle();
       setMessage(puzzle.successMessage);
       return;
@@ -254,23 +277,36 @@ export function BoardScreen() {
     setCurrentPlayer(nextPlayer(currentPlayer));
   }
 
+  function goToNextMission() {
+    const nextMissionId = getNextMissionId(mission.id);
+    loadMission(nextMissionId);
+  }
+
+  function goToNextPuzzle() {
+    const index = puzzles.findIndex((item) => item.id === puzzle.id);
+    const nextPuzzle = puzzles[Math.min(index + 1, puzzles.length - 1)];
+    loadPuzzle(nextPuzzle.id);
+  }
+
   return (
     <main className="app-shell app-shell--game">
       <header className="hero game-hero">
         <div>
-          <p className="eyebrow">GoQuest Sprint 4.2</p>
+          <p className="eyebrow">GoQuest Sprint 4.4</p>
           <h1>Reino do Tabuleiro</h1>
-          <p>Go como campanha medieval: sprites reais entram no campo, formam companhias e revelam a lógica do motor.</p>
+          <p>
+            Uma arena viva de estratégia: Go, fantasia medieval, formações e lógica de programação.
+          </p>
         </div>
         <div className="signature">Tehkné Solutions</div>
       </header>
 
       <nav className="game-menu" aria-label="Menu de jogo">
-        <button type="button" className={mode === "mission" ? "is-active" : ""} onClick={() => loadMission(mission.id)}>Jornada</button>
-        <button type="button" className={mode === "puzzle" ? "is-active" : ""} onClick={() => loadPuzzle(puzzle.id)}>Puzzles</button>
-        <button type="button" className={mode === "free" ? "is-active" : ""} onClick={startFreeMode}>Campo livre</button>
+        <button type="button" onClick={() => loadMission(mission.id)}>Jornada</button>
+        <button type="button" onClick={() => loadPuzzle(puzzle.id)}>Puzzles</button>
+        <button type="button" onClick={openFreeMode}>Campo livre</button>
         <button type="button" onClick={() => setShowTarget((value) => !value)}>{showTarget ? "Dica ativa" : "Dica oculta"}</button>
-        <button type="button" onClick={replayCurrent}>Rejogar</button>
+        <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>Rejogar</button>
         <button type="button" onClick={clearProgress}>Limpar progresso</button>
       </nav>
 
@@ -281,23 +317,33 @@ export function BoardScreen() {
         <div><strong>Puzzles</strong><span>{progress.completedPuzzles.length}/{puzzles.length}</span></div>
       </section>
 
-      <section className="journey-panel" aria-label="Jornada do Mundo 1">
+      <section className="journey-panel" aria-label="Mapa da campanha">
         <div>
           <p className="eyebrow">Mapa da campanha</p>
           <h2>{mode === "puzzle" ? "Arena de Puzzles" : mode === "free" ? "Campo Livre" : "O Tabuleiro Vivo"}</h2>
-          <p>{mode === "puzzle" ? "Resolva desafios curtos para dominar captura, conexão, atari e território." : "Complete as missões para liberar a base mental do Go: respirar, capturar e conectar."}</p>
+          <p>{mode === "puzzle" ? "Resolva desafios curtos de leitura estratégica." : "Aprenda a respirar, capturar e conectar."}</p>
         </div>
 
         <div className="mission-tabs">
           {mode === "puzzle"
             ? puzzles.map((item) => (
-                <button key={item.id} className={`mission-tab ${item.id === puzzle.id ? "mission-tab--active" : ""}`} type="button" onClick={() => loadPuzzle(item.id)}>
+                <button
+                  key={item.id}
+                  className={item.id === puzzle.id ? "mission-tab mission-tab--active" : "mission-tab"}
+                  type="button"
+                  onClick={() => loadPuzzle(item.id)}
+                >
                   <span>{progress.completedPuzzles.includes(item.id) ? "✓" : item.id.replace("p", "")}</span>
                   <strong>{item.title}</strong>
                 </button>
               ))
             : missions.map((item) => (
-                <button key={item.id} className={`mission-tab ${mode === "mission" && item.id === mission.id ? "mission-tab--active" : ""}`} type="button" onClick={() => loadMission(item.id)}>
+                <button
+                  key={item.id}
+                  className={item.id === mission.id && mode === "mission" ? "mission-tab mission-tab--active" : "mission-tab"}
+                  type="button"
+                  onClick={() => loadMission(item.id)}
+                >
                   <span>{progress.completedMissions.includes(item.id) ? "✓" : "•"}</span>
                   <strong>{item.title}</strong>
                 </button>
@@ -306,7 +352,9 @@ export function BoardScreen() {
 
         {progress.medals.length > 0 && (
           <div className="medal-row">
-            {progress.medals.map((medal) => <span key={medal}>{medalLabels[medal]}</span>)}
+            {progress.medals.map((medal) => (
+              <span key={medal}>{medalLabels[medal]}</span>
+            ))}
           </div>
         )}
       </section>
@@ -317,37 +365,66 @@ export function BoardScreen() {
         <section className="board-card board-card--cinematic">
           <div className="board-header">
             <div>
-              <p className="eyebrow">Campo 2.5D</p>
+              <p className="eyebrow">Arena 2.5D</p>
               <h2>{activeLesson.concept}</h2>
             </div>
             <div className="board-header-actions">
               <CameraControls value={boardCamera} onChange={setBoardCamera} />
-              <button type="button" onClick={() => setShowTarget((value) => !value)}>{showTarget ? "Ocultar dica" : "Mostrar dica"}</button>
+              <button type="button" onClick={() => setShowTarget((value) => !value)}>
+                {showTarget ? "Ocultar dica" : "Mostrar dica"}
+              </button>
             </div>
           </div>
 
           <BoardGrid
             board={board}
             expectedMove={targetMove}
+            selectedPosition={selectedPosition}
             showTarget={showTarget}
             camera={boardCamera}
-            selectedPosition={selectedPosition}
             onCellClick={handlePlay}
           />
 
           <div className="board-actions">
-            <button type="button" onClick={replayCurrent}>Rejogar</button>
-            {mode === "mission" && <button type="button" onClick={() => loadMission(getNextMissionId(mission.id))} disabled={mission.id === missions[missions.length - 1].id}>Próxima missão</button>}
-            {mode === "puzzle" && <button type="button" onClick={() => loadPuzzle(getNextPuzzleId(puzzle.id))} disabled={puzzle.id === puzzles[puzzles.length - 1].id}>Próximo puzzle</button>}
+            <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>
+              Rejogar
+            </button>
+            {mode === "mission" && (
+              <button type="button" onClick={goToNextMission} disabled={mission.id === missions[missions.length - 1].id}>
+                Próxima missão
+              </button>
+            )}
+            {mode === "puzzle" && (
+              <button type="button" onClick={goToNextPuzzle} disabled={puzzle.id === puzzles[puzzles.length - 1].id}>
+                Próximo puzzle
+              </button>
+            )}
           </div>
+
+          {mode === "mission" && isMissionComplete && (
+            <div className="success-card">
+              <strong>Missão concluída</strong>
+              <span>{mission.successMessage}</span>
+            </div>
+          )}
+
+          {mode === "puzzle" && isPuzzleComplete && (
+            <div className="success-card">
+              <strong>Puzzle concluído</strong>
+              <span>{puzzle.successMessage}</span>
+            </div>
+          )}
         </section>
 
-        <div className="tutor-stack tutor-stack--game">
-          <CharacterPanel board={board} character={selectedCharacter} />
-          <TutorDevPanel event={selectedEvent} devGoal={activeLesson.devGoal} />
-          <TutorEventLog events={tutorEvents} selectedIndex={selectedEventIndex} onSelect={setSelectedEventIndex} />
-          <CodexPanel />
-        </div>
+        <RightPanelTabs
+          board={board}
+          selectedCharacter={selectedCharacter}
+          selectedEvent={tutorEvents[selectedEventIndex]}
+          devGoal={activeLesson.devGoal}
+          events={tutorEvents}
+          selectedEventIndex={selectedEventIndex}
+          onSelectEvent={setSelectedEventIndex}
+        />
       </section>
     </main>
   );

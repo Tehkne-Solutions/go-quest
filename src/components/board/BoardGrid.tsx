@@ -1,13 +1,14 @@
 import type { Board, Position } from "../../types/game";
 import { BoardCell } from "./BoardCell";
+import { BoardFrame } from "./BoardFrame";
 import type { BoardCamera } from "./CameraControls";
 
 type BoardGridProps = {
   board: Board;
   expectedMove?: Position;
+  selectedPosition?: Position;
   showTarget: boolean;
   camera?: BoardCamera;
-  selectedPosition?: Position;
   onCellClick: (position: Position) => void;
 };
 
@@ -38,27 +39,29 @@ function hasConnectedAlly(board: Board, position: Position): boolean {
 export function BoardGrid({
   board,
   expectedMove,
+  selectedPosition,
   showTarget,
   camera = "iso",
-  selectedPosition,
   onCellClick
 }: BoardGridProps) {
   return (
     <div className={`board-stage board-stage--${camera}`}>
-      <div className="board-grid" role="grid" aria-label="Tabuleiro 5 por 5">
-        {board.flatMap((row) =>
-          row.map((cell) => (
-            <BoardCell
-              key={`${cell.position.x}-${cell.position.y}`}
-              cell={cell}
-              isExpected={showTarget && samePosition(cell.position, expectedMove)}
-              isFormation={hasConnectedAlly(board, cell.position)}
-              isSelected={samePosition(cell.position, selectedPosition)}
-              onClick={onCellClick}
-            />
-          ))
-        )}
-      </div>
+      <BoardFrame>
+        <div className="board-grid" role="grid" aria-label="Tabuleiro 5 por 5">
+          {board.flatMap((row) =>
+            row.map((cell) => (
+              <BoardCell
+                key={`${cell.position.x}-${cell.position.y}`}
+                cell={cell}
+                isExpected={showTarget && samePosition(cell.position, expectedMove)}
+                isSelected={samePosition(cell.position, selectedPosition)}
+                isFormation={hasConnectedAlly(board, cell.position)}
+                onClick={onCellClick}
+              />
+            ))
+          )}
+        </div>
+      </BoardFrame>
     </div>
   );
 }

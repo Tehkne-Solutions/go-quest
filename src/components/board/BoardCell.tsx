@@ -1,4 +1,5 @@
 import type { BoardCell as BoardCellType, Position } from "../../types/game";
+import { FormationCamp } from "./FormationCamp";
 import { StoneView } from "./StoneView";
 
 type BoardCellProps = {
@@ -21,13 +22,19 @@ export function BoardCell({
 
   return (
     <button
-      className={`board-cell ${isExpected ? "board-cell--target" : ""} ${isFormation ? "board-cell--formation" : ""} ${isSelected ? "board-cell--selected" : ""} ${roleClass}`}
+      className={[
+        "board-cell",
+        isExpected ? "board-cell--target" : "",
+        isFormation ? "board-cell--formation" : "",
+        isSelected ? "board-cell--selected" : "",
+        roleClass
+      ].join(" ")}
       type="button"
       onClick={() => onClick(cell.position)}
       aria-label={`Casa x:${cell.position.x}, y:${cell.position.y}`}
     >
       <span className="intersection" />
-      {isFormation && <span className="camp-marker" aria-hidden="true" />}
+      <FormationCamp active={isFormation} />
       {!isEmpty && (
         <StoneView
           color={cell.state}

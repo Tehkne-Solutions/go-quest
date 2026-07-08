@@ -1,10 +1,10 @@
 export type BoardCamera = "top" | "iso" | "cinematic" | "rotated";
 
 const cameraLabels: Record<BoardCamera, string> = {
-  top: "Top-down",
-  iso: "Isométrico",
-  cinematic: "Cinemático",
-  rotated: "Rotacionado"
+  top: "Top",
+  iso: "Iso",
+  cinematic: "Cine",
+  rotated: "Rot."
 };
 
 type CameraControlsProps = {

@@ -1,0 +1,290 @@
+.miniature-piece {
+  position: relative;
+  z-index: 3;
+  display: inline-grid;
+  place-items: center;
+  width: clamp(54px, 7vw, 82px);
+  height: clamp(78px, 10vw, 118px);
+  overflow: visible;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 18px 16px rgba(0, 0, 0, 0.45));
+}
+
+.board-stage--iso .miniature-piece {
+  transform: translateZ(56px) rotateX(-54deg) rotateZ(37deg) scale(1.03);
+}
+
+.board-stage--cinematic .miniature-piece {
+  transform: translateZ(62px) rotateX(-67deg) rotateZ(18deg) scale(1.12);
+}
+
+.board-stage--rotated .miniature-piece {
+  transform: translateZ(56px) rotateX(-54deg) rotateZ(-38deg) scale(1.03);
+}
+
+.miniature-piece__shadow {
+  position: absolute;
+  bottom: 3%;
+  width: 84%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.44);
+  filter: blur(4px);
+}
+
+.miniature-piece__pedestal {
+  position: absolute;
+  bottom: 4%;
+  width: 82%;
+  height: 24%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #6d5c49, #2a211b 64%, #090808);
+  border: 2px solid rgba(245, 198, 111, 0.38);
+  box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.08), 0 10px 18px rgba(0, 0, 0, 0.35);
+}
+
+.miniature-piece__pedestal-ring {
+  position: absolute;
+  inset: 18% 10%;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 198, 111, 0.38);
+}
+
+.miniature-piece__body {
+  position: absolute;
+  bottom: 18%;
+  width: 74%;
+  height: 76%;
+}
+
+.miniature-piece__head,
+.miniature-piece__torso,
+.miniature-piece__left-arm,
+.miniature-piece__right-arm,
+.miniature-piece__weapon,
+.miniature-piece__class-mark {
+  position: absolute;
+  display: block;
+}
+
+.miniature-piece__head {
+  z-index: 5;
+  top: 5%;
+  left: 32%;
+  width: 36%;
+  height: 24%;
+  border-radius: 48% 48% 38% 38%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(145deg, #dca66f, #845236);
+}
+
+.miniature-piece__torso {
+  z-index: 4;
+  left: 20%;
+  bottom: 10%;
+  width: 60%;
+  height: 62%;
+  border-radius: 34% 34% 18% 18%;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(145deg, #3b3f48, #111318);
+}
+
+.miniature-piece__left-arm,
+.miniature-piece__right-arm {
+  z-index: 3;
+  top: 43%;
+  width: 19%;
+  height: 34%;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #464a54, #15171d);
+}
+
+.miniature-piece__left-arm {
+  left: 3%;
+  transform: rotate(24deg);
+}
+
+.miniature-piece__right-arm {
+  right: 3%;
+  transform: rotate(-24deg);
+}
+
+.miniature-piece__weapon {
+  z-index: 6;
+  right: -9%;
+  top: 43%;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #1b1208;
+  background: linear-gradient(180deg, #f4d38a, #ae742d);
+  font-weight: 900;
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.36);
+}
+
+.miniature-piece__class-mark {
+  z-index: 8;
+  bottom: 14%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--role-color, #d6a95d);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--role-color, #d6a95d) 60%, transparent);
+}
+
+.miniature-piece--black .miniature-piece__head {
+  background: linear-gradient(145deg, #594939, #1a1511);
+}
+
+.miniature-piece--black .miniature-piece__torso,
+.miniature-piece--black .miniature-piece__left-arm,
+.miniature-piece--black .miniature-piece__right-arm {
+  background: linear-gradient(145deg, #263141, #07090d);
+}
+
+.miniature-piece--white .miniature-piece__head {
+  background: linear-gradient(145deg, #f0c89a, #9d6b47);
+}
+
+.miniature-piece--white .miniature-piece__torso,
+.miniature-piece--white .miniature-piece__left-arm,
+.miniature-piece--white .miniature-piece__right-arm {
+  background: linear-gradient(145deg, #ded2b7, #716653);
+}
+
+.miniature-piece--scout { --role-color: #6ebd73; }
+.miniature-piece--hunter { --role-color: #d28a43; }
+.miniature-piece--guard { --role-color: #7fa7cf; }
+.miniature-piece--link { --role-color: #9d72dd; }
+.miniature-piece--builder { --role-color: #c38440; }
+.miniature-piece--raider { --role-color: #cc5e42; }
+
+.miniature-piece--scout .miniature-piece__torso::before {
+  content: "";
+  position: absolute;
+  inset: -12px -7px auto;
+  height: 20px;
+  border-radius: 18px 18px 6px 6px;
+  background: linear-gradient(90deg, #234e2e, #6ebd73);
+  transform: rotate(-7deg);
+}
+
+.miniature-piece--hunter .miniature-piece__left-arm::after {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: -12px;
+  width: 8px;
+  height: 52px;
+  border-radius: 999px;
+  background: #b98545;
+  transform: rotate(-22deg);
+}
+
+.miniature-piece--guard .miniature-piece__right-arm::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: -10px;
+  width: 22px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #e6e2d1, #6c7892);
+  border: 2px solid #242936;
+}
+
+.miniature-piece--link .miniature-piece__weapon {
+  color: #fff;
+  background: radial-gradient(circle, #d9b6ff, #673ea8);
+  box-shadow: 0 0 14px rgba(157, 114, 221, 0.65);
+}
+
+.miniature-piece--builder .miniature-piece__right-arm::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  top: 5px;
+  width: 25px;
+  height: 18px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #be7b33, #4b2a15);
+  border: 2px solid #23170d;
+}
+
+.miniature-piece--raider .miniature-piece__head::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  top: -16px;
+  height: 18px;
+  clip-path: polygon(0 100%, 17% 0, 34% 100%, 66% 100%, 83% 0, 100% 100%);
+  background: linear-gradient(90deg, #a3402a, #ff7348);
+}
+
+.miniature-piece--selected .miniature-piece__pedestal {
+  border-color: #f5d48a;
+  box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.12), 0 0 0 6px rgba(245, 212, 138, 0.1), 0 0 22px rgba(245, 212, 138, 0.34);
+}
+
+.miniature-piece--formation .miniature-piece__pedestal {
+  border-color: var(--role-color);
+}
+
+.formation-camp {
+  position: absolute;
+  z-index: 1;
+  bottom: 11%;
+  width: 62%;
+  height: 30%;
+  pointer-events: none;
+}
+
+.formation-camp__banner,
+.formation-camp__crate,
+.formation-camp__ember {
+  position: absolute;
+  display: block;
+}
+
+.formation-camp__banner {
+  left: 7%;
+  bottom: 32%;
+  width: 9px;
+  height: 32px;
+  background: linear-gradient(180deg, #224b7b, #0d203a);
+  border: 1px solid rgba(245, 198, 111, 0.42);
+}
+
+.formation-camp__crate {
+  right: 5%;
+  bottom: 10%;
+  width: 20px;
+  height: 15px;
+  border-radius: 4px;
+  background: linear-gradient(145deg, #9a6232, #44230f);
+}
+
+.formation-camp__ember {
+  left: 42%;
+  bottom: 6%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffb35d, transparent 70%);
+}
+
+@media (max-width: 920px) {
+  .board-stage--iso .miniature-piece,
+  .board-stage--cinematic .miniature-piece,
+  .board-stage--rotated .miniature-piece {
+    transform: none;
+  }
+
+  .miniature-piece {
+    width: clamp(44px, 13vw, 68px);
+    height: clamp(66px, 18vw, 96px);
+  }
+}
