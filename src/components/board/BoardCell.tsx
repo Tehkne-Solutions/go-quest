@@ -1,4 +1,4 @@
-import type { BoardCell as BoardCellType, Position } from "../../types/game";
+import type { BoardCell as BoardCellType, PlayerColor, Position } from "../../types/game";
 import { FormationCamp } from "./FormationCamp";
 import { StoneView } from "./StoneView";
 
@@ -17,7 +17,7 @@ export function BoardCell({
   isSelected = false,
   onClick
 }: BoardCellProps) {
-  const isEmpty = cell.state === "EMPTY";
+  const stoneColor: PlayerColor | undefined = cell.state === "EMPTY" ? undefined : cell.state;
 
   return (
     <button
@@ -33,9 +33,9 @@ export function BoardCell({
     >
       <span className="intersection" />
       <FormationCamp active={isFormation} />
-      {!isEmpty && (
+      {stoneColor && (
         <StoneView
-          color={cell.state}
+          color={stoneColor}
           character={cell.character}
           formation={isFormation}
           selected={isSelected}
