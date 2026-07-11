@@ -1,6 +1,85 @@
+import { useTexture } from "@react-three/drei";
 import type { CharacterRole } from "../../types/character";
 import type { Piece3DProps } from "../types/render3d";
-const roleColors:Record<CharacterRole,{body:string;accent:string;dark:string}>={SCOUT:{body:"#2f7b43",accent:"#78dd83",dark:"#14291d"},HUNTER:{body:"#9a6333",accent:"#e3a35a",dark:"#392719"},GUARD:{body:"#7e8ca0",accent:"#f1cc75",dark:"#1f2836"},LINK:{body:"#6849a3",accent:"#c189ff",dark:"#241a3d"},BUILDER:{body:"#9b6031",accent:"#f1bd65",dark:"#352217"},RAIDER:{body:"#6d833c",accent:"#e26343",dark:"#26341f"}};
-function RoleHead({role,color}:{role:CharacterRole;color:string}){if(role==="GUARD")return <mesh position={[0,0.92,0]} castShadow><boxGeometry args={[0.32,0.28,0.28]}/><meshStandardMaterial color="#d8d1bd" roughness={0.55} metalness={0.35}/></mesh>;return <mesh position={[0,0.92,0]} castShadow><sphereGeometry args={[0.18,24,24]}/><meshStandardMaterial color={role==="RAIDER"?"#80ad52":color} roughness={0.7}/></mesh>}
-function RoleWeapon({role,accent}:{role:CharacterRole;accent:string}){if(role==="HUNTER")return <group position={[0.32,0.63,0]} rotation={[0,0,-0.32]}><mesh castShadow><torusGeometry args={[0.2,0.018,8,28,Math.PI]}/><meshStandardMaterial color="#b98545"/></mesh></group>;if(role==="GUARD")return <mesh position={[0.33,0.55,0.02]} rotation={[0,0,-0.12]} castShadow><boxGeometry args={[0.22,0.48,0.08]}/><meshStandardMaterial color="#d8d1bd" roughness={0.5} metalness={0.28}/></mesh>;if(role==="LINK")return <mesh position={[0.34,0.74,0]} castShadow><sphereGeometry args={[0.08,18,18]}/><meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.35}/></mesh>;if(role==="BUILDER")return <group position={[0.32,0.56,0]} rotation={[0,0,-0.6]}><mesh castShadow><cylinderGeometry args={[0.035,0.035,0.42,10]}/><meshStandardMaterial color="#7b4a24"/></mesh><mesh position={[0,0.23,0]} castShadow><boxGeometry args={[0.22,0.1,0.12]}/><meshStandardMaterial color={accent}/></mesh></group>;if(role==="RAIDER")return <group position={[0.34,0.62,0]} rotation={[0,0,-0.65]}><mesh castShadow><cylinderGeometry args={[0.035,0.035,0.55,10]}/><meshStandardMaterial color="#63361f"/></mesh><mesh position={[0,0.3,0]} castShadow><coneGeometry args={[0.15,0.28,4]}/><meshStandardMaterial color="#c7c7c7" roughness={0.4} metalness={0.35}/></mesh></group>;return <><mesh position={[-0.33,0.55,0]} rotation={[0,0,0.65]} castShadow><coneGeometry args={[0.045,0.45,8]}/><meshStandardMaterial color={accent}/></mesh><mesh position={[0.33,0.55,0]} rotation={[0,0,-0.65]} castShadow><coneGeometry args={[0.045,0.45,8]}/><meshStandardMaterial color={accent}/></mesh></>}
-export function Piece3D({color,role,worldPosition,selected=false,formation=false}:Piece3DProps){const p=roleColors[role];const[x,,z]=worldPosition;const sideTint=color==="BLACK"?"#1a1d24":"#e4d9bd";return <group position={[x,0.28,z]} rotation={[0,Math.PI/4,0]}><mesh castShadow receiveShadow><cylinderGeometry args={[0.33,0.4,0.18,32]}/><meshStandardMaterial color={sideTint} roughness={0.68} metalness={0.18}/></mesh><mesh position={[0,0.12,0]} castShadow receiveShadow><cylinderGeometry args={[0.26,0.32,0.12,32]}/><meshStandardMaterial color={p.accent} roughness={0.52} metalness={0.22} emissive={formation?p.accent:"#000000"} emissiveIntensity={formation?0.1:0}/></mesh><mesh position={[0,0.52,0]} castShadow><cylinderGeometry args={[0.2,0.28,0.62,24]}/><meshStandardMaterial color={p.body} roughness={0.72} metalness={role==="GUARD"?0.25:0.05}/></mesh><mesh position={[0,0.68,0.035]} castShadow><boxGeometry args={[0.42,0.08,0.18]}/><meshStandardMaterial color={p.dark} roughness={0.8}/></mesh><RoleHead role={role} color={role==="LINK"?"#d8a582":"#d49a68"}/><RoleWeapon role={role} accent={p.accent}/>{selected&&<mesh position={[0,0.02,0]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[0.44,0.52,36]}/><meshStandardMaterial color="#f3d58d" emissive="#f3d58d" emissiveIntensity={0.3}/></mesh>}</group>}
+
+const roleColors: Record<CharacterRole, { base: string; accent: string; glow: string; file: string }> = {
+  SCOUT: { base: "#2d3a25", accent: "#75c66a", glow: "#8be17f", file: "/assets/goquest/pieces-textured/scout.png" },
+  HUNTER: { base: "#4b3323", accent: "#d3a15e", glow: "#e6bc75", file: "/assets/goquest/pieces-textured/hunter.png" },
+  GUARD: { base: "#273240", accent: "#d6b26d", glow: "#f2d08f", file: "/assets/goquest/pieces-textured/guard.png" },
+  LINK: { base: "#332447", accent: "#b384ff", glow: "#c79cff", file: "/assets/goquest/pieces-textured/link.png" },
+  BUILDER: { base: "#443323", accent: "#d8a564", glow: "#efc27d", file: "/assets/goquest/pieces-textured/builder.png" },
+  RAIDER: { base: "#3a2a24", accent: "#d96d4f", glow: "#ea8a6e", file: "/assets/goquest/pieces-textured/raider.png" }
+};
+
+function Pedestal({ base, accent, selected, formation }: { base: string; accent: string; selected?: boolean; formation?: boolean }) {
+  return (
+    <group>
+      <mesh castShadow receiveShadow position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.45, 0.5, 0.18, 40]} />
+        <meshStandardMaterial color="#1b1612" roughness={0.82} metalness={0.18} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 0.19, 0]}>
+        <cylinderGeometry args={[0.39, 0.43, 0.08, 40]} />
+        <meshStandardMaterial color={base} roughness={0.74} metalness={0.16} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 0.23, 0]}>
+        <cylinderGeometry args={[0.33, 0.39, 0.06, 40]} />
+        <meshStandardMaterial color={accent} roughness={0.48} metalness={0.22} emissive={formation ? accent : "#000000"} emissiveIntensity={formation ? 0.18 : 0} />
+      </mesh>
+      {selected && (
+        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.5, 0.59, 48]} />
+          <meshStandardMaterial color="#f3d58d" emissive="#f3d58d" emissiveIntensity={0.26} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+export function Piece3D({ color, role, worldPosition, selected = false, formation = false }: Piece3DProps) {
+  const palette = roleColors[role];
+  const texture = useTexture(palette.file);
+  texture.flipY = false;
+  const [x, , z] = worldPosition;
+  const y = 0.22;
+  const tint = color === "BLACK" ? "#ffffff" : "#e8e0d0";
+
+  return (
+    <group position={[x, y, z]}>
+      <Pedestal base={palette.base} accent={palette.accent} selected={selected} formation={formation} />
+
+      <group position={[0, 0.28, 0]}>
+        <mesh castShadow position={[0, 0.62, 0]}>
+          <planeGeometry args={[0.92, 1.24]} />
+          <meshStandardMaterial
+            map={texture}
+            transparent
+            alphaTest={0.08}
+            color={tint}
+            roughness={0.88}
+            metalness={0.02}
+          />
+        </mesh>
+
+        <mesh castShadow position={[0, 0.62, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry args={[0.92, 1.24]} />
+          <meshStandardMaterial
+            map={texture}
+            transparent
+            alphaTest={0.08}
+            color={tint}
+            roughness={0.88}
+            metalness={0.02}
+          />
+        </mesh>
+      </group>
+
+      {formation && (
+        <mesh position={[0, 0.24, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.28, 0.36, 36]} />
+          <meshStandardMaterial color={palette.glow} emissive={palette.glow} emissiveIntensity={0.22} transparent opacity={0.95} />
+        </mesh>
+      )}
+    </group>
+  );
+}
