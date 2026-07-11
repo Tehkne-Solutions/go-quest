@@ -17,7 +17,7 @@ export function BoardCell({
   isSelected = false,
   onClick
 }: BoardCellProps) {
-  const stoneColor: PlayerColor | undefined = cell.state === "EMPTY" ? undefined : cell.state;
+  const stoneColor = cell.state === "EMPTY" ? undefined : (cell.state as PlayerColor);
 
   return (
     <button

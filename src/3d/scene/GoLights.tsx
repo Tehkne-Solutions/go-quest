@@ -1,0 +1,1 @@
+export function GoLights() { return (<><ambientLight intensity={0.85}/><directionalLight position={[3,6,4]} intensity={1.35} castShadow/><directionalLight position={[-4,4,-3]} intensity={0.42}/><pointLight position={[0,2.8,0]} intensity={0.65} color="#d7a95e"/></>); }

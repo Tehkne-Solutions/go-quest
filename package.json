@@ -10,11 +10,13 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-three/fiber": "latest",
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "typescript": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "three": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",

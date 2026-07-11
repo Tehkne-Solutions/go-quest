@@ -17,7 +17,12 @@ const roleAsset: Record<CharacterRole, string> = {
   RAIDER: "/assets/goquest/pieces/raider.png"
 };
 
-export function StoneView({ color, character, formation = false, selected = false }: StoneViewProps) {
+export function StoneView({
+  color,
+  character,
+  formation = false,
+  selected = false
+}: StoneViewProps) {
   const role: CharacterRole = character?.role ?? "SCOUT";
   const label = character
     ? `${character.name} - ${character.title}`
@@ -37,7 +42,9 @@ export function StoneView({ color, character, formation = false, selected = fals
     >
       <span className="asset-piece__shadow" />
       <span className="asset-piece__pedestal" />
-      <img src={roleAsset[role]} alt="" className="asset-piece__img" draggable={false} />
+      <span className="asset-piece__figure">
+        <img src={roleAsset[role]} alt="" className="asset-piece__img" draggable={false} />
+      </span>
     </span>
   );
 }
