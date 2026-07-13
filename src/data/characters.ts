@@ -1,22 +1,22 @@
 import type { CharacterRole, StoneCharacter } from "../types/character";
 import type { PlayerColor, Position } from "../types/game";
 
-const crownNames: Record<CharacterRole, string[]> = {
-  SCOUT: ["Aric", "Lysa", "Toren"],
-  HUNTER: ["Kael", "Mira", "Doran"],
+const hordeNames: Record<CharacterRole, string[]> = {
+  SCOUT: ["Aric", "Nyx", "Sorin"],
+  HUNTER: ["Kael", "Malrik", "Zev"],
+  GUARD: ["Orn", "Dusk", "Vark"],
+  LINK: ["Iris", "Noct", "Sable"],
+  BUILDER: ["Rurik", "Ebon", "Thane"],
+  RAIDER: ["Skarn", "Rhea", "Voss"]
+};
+
+const allianceNames: Record<CharacterRole, string[]> = {
+  SCOUT: ["Lysa", "Toren", "Vale"],
+  HUNTER: ["Mira", "Doran", "Kara"],
   GUARD: ["Brom", "Elia", "Garran"],
   LINK: ["Rowan", "Selene", "Tavio"],
   BUILDER: ["Merek", "Asha", "Corvin"],
-  RAIDER: ["Rurik", "Nera", "Voss"]
-};
-
-const veilNames: Record<CharacterRole, string[]> = {
-  SCOUT: ["Nyx", "Vale", "Sorin"],
-  HUNTER: ["Kara", "Malrik", "Zev"],
-  GUARD: ["Orn", "Vela", "Dusk"],
-  LINK: ["Iris", "Noct", "Sable"],
-  BUILDER: ["Mora", "Ebon", "Thane"],
-  RAIDER: ["Skarn", "Rhea", "Vark"]
+  RAIDER: ["Vela", "Nera", "Mora"]
 };
 
 const roleDetails: Record<CharacterRole, Omit<StoneCharacter, "id" | "color" | "faction" | "name">> = {
@@ -91,8 +91,8 @@ export function createStoneCharacter(
   position: Position,
   seed = 0
 ): StoneCharacter {
-  const faction = color === "BLACK" ? "CROWN" : "VEIL";
-  const names = faction === "CROWN" ? crownNames[role] : veilNames[role];
+  const faction = color === "BLACK" ? "HORDE" : "ALLIANCE";
+  const names = faction === "HORDE" ? hordeNames[role] : allianceNames[role];
   const name = names[(position.x + position.y + seed) % names.length];
   const details = roleDetails[role];
 
@@ -106,6 +106,6 @@ export function createStoneCharacter(
 }
 
 export function createDefaultCharacter(color: PlayerColor, position: Position): StoneCharacter {
-  const role: CharacterRole = color === "BLACK" ? "GUARD" : "RAIDER";
+  const role: CharacterRole = color === "BLACK" ? "RAIDER" : "GUARD";
   return createStoneCharacter(color, role, position, 1);
 }
