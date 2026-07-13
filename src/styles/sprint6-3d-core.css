@@ -1,1 +1,302 @@
-.app-shell--3d{width:min(1760px,100%)}.workspace--3d{display:grid;grid-template-columns:300px minmax(680px,1fr) 360px;gap:18px;align-items:start}.board-card--3d{min-height:760px;overflow:visible!important}.go-3d-shell{position:relative;min-height:610px;height:min(72vh,720px);border-radius:28px;overflow:hidden;border:1px solid rgba(215,169,94,.24);background:radial-gradient(circle at 50% 20%,rgba(215,169,94,.12),transparent 35%),linear-gradient(180deg,rgba(8,10,16,.92),rgba(3,4,8,.95));box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 70px rgba(0,0,0,.34)}.go-3d-shell canvas{display:block;width:100%!important;height:100%!important}.go-3d-hud{position:absolute;left:16px;bottom:16px;display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid rgba(215,169,94,.22);border-radius:999px;background:rgba(3,4,8,.72);color:#f0e5cc;font-size:.82rem;pointer-events:none}.go-3d-hud span{color:#b8ad98;font-weight:800}.go-3d-hud strong{color:#f3d58d}@media(max-width:1320px){.workspace--3d{grid-template-columns:minmax(260px,.74fr) minmax(560px,1.26fr)}.right-panel-shell{grid-column:1/-1}}@media(max-width:920px){.workspace--3d{grid-template-columns:1fr}.go-3d-shell{min-height:460px;height:62vh}}
+:root {
+  --hud-bg: rgba(5, 7, 12, 0.88);
+  --hud-panel: rgba(17, 22, 32, 0.92);
+  --hud-panel-2: rgba(25, 31, 44, 0.95);
+  --hud-gold: #d7a95e;
+  --hud-gold-2: #f3d58d;
+  --hud-text: #f0e5cc;
+  --hud-muted: #b8ad98;
+  --hud-horde: #ff6d55;
+  --hud-alliance: #8dc8ff;
+}
+
+.app-shell--3d,
+.app-shell--hud {
+  width: min(1760px, 100%);
+  padding: 14px !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(141, 200, 255, 0.12), transparent 24rem),
+    radial-gradient(circle at 90% 4%, rgba(255, 109, 85, 0.13), transparent 24rem),
+    linear-gradient(180deg, rgba(5, 7, 12, 0.95), rgba(3, 4, 7, 1));
+}
+
+.game-hud-topbar {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 210px minmax(360px, 0.7fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid rgba(215, 169, 94, 0.28);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.018)),
+    var(--hud-bg);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 20px 48px rgba(0,0,0,.35);
+}
+
+.hud-brand {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.hud-brand h1 {
+  margin: 0;
+  color: var(--hud-text);
+  font-size: clamp(2rem, 3vw, 3.35rem);
+  letter-spacing: -0.04em;
+}
+
+.hud-brand span {
+  color: var(--hud-muted);
+}
+
+.hud-crest {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid rgba(215, 169, 94, 0.5);
+  color: var(--hud-gold-2);
+  background:
+    radial-gradient(circle, rgba(71, 119, 191, .22), transparent 60%),
+    rgba(3, 4, 8, .9);
+  font-family: Georgia, serif;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hud-turn,
+.hud-resources,
+.hud-sound {
+  border: 1px solid rgba(215, 169, 94, 0.22);
+  border-radius: 18px;
+  background: rgba(4, 5, 9, 0.72);
+  color: var(--hud-text);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.hud-turn {
+  padding: 12px 14px;
+}
+
+.hud-turn small,
+.hud-resources small {
+  display: block;
+  color: var(--hud-muted);
+  text-transform: uppercase;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.hud-turn strong {
+  display: block;
+  font-size: 1.25rem;
+}
+
+.hud-turn--horde {
+  border-color: rgba(255, 109, 85, .42);
+  box-shadow: 0 0 28px rgba(255, 109, 85, .12), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.hud-turn--alliance {
+  border-color: rgba(141, 200, 255, .42);
+  box-shadow: 0 0 28px rgba(141, 200, 255, .12), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.hud-resources {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+}
+
+.hud-resources div {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.045);
+}
+
+.hud-resources strong {
+  font-size: 1.1rem;
+}
+
+.hud-sound {
+  padding: 13px 16px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.game-menu--hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(215, 169, 94, 0.22);
+  border-radius: 999px;
+  background: rgba(3, 4, 8, 0.9);
+  margin-bottom: 12px;
+}
+
+.game-menu--hud button,
+.board-header-actions button,
+.bottom-action-hud button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, var(--hud-gold-2), var(--hud-gold));
+  color: #21150b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.journey-panel--hud {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.6fr) minmax(500px, 1.4fr);
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 18px 22px;
+  border: 1px solid rgba(215, 169, 94, .2);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.02)), var(--hud-panel);
+}
+
+.workspace--3d,
+.workspace--game-hud {
+  display: grid;
+  grid-template-columns: 300px minmax(680px, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.workspace--game-hud .panel,
+.board-card--hud {
+  border: 1px solid rgba(215, 169, 94, .22) !important;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
+    var(--hud-panel) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 20px 52px rgba(0,0,0,.28) !important;
+}
+
+.board-card--3d,
+.board-card--hud {
+  min-height: 760px;
+  overflow: visible !important;
+}
+
+.board-header--hud {
+  align-items: start;
+}
+
+.go-3d-shell {
+  position: relative;
+  min-height: 640px;
+  height: min(72vh, 760px);
+  border-radius: 28px;
+  overflow: hidden;
+  border: 1px solid rgba(215, 169, 94, 0.28);
+  background:
+    radial-gradient(circle at 50% 24%, rgba(215, 169, 94, 0.16), transparent 34%),
+    radial-gradient(circle at 20% 80%, rgba(255, 109, 85, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(141, 200, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(8, 10, 16, 0.96), rgba(3, 4, 8, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 70px rgba(0,0,0,0.34);
+}
+
+.go-3d-shell canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.go-3d-hud {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(215, 169, 94, 0.22);
+  border-radius: 999px;
+  background: rgba(3, 4, 8, 0.78);
+  color: var(--hud-text);
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+
+.go-3d-hud span,
+.go-3d-hud em {
+  color: var(--hud-muted);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.go-3d-hud strong {
+  color: var(--hud-gold-2);
+}
+
+.bottom-action-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(215, 169, 94, .18);
+  border-radius: 18px;
+  background: rgba(3, 4, 8, .54);
+}
+
+.bottom-action-hud span {
+  flex: 1 1 280px;
+  color: var(--hud-muted);
+  font-weight: 700;
+}
+
+.faction-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 6px 0 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.faction-badge--horde {
+  color: #ffd1c9;
+  background: rgba(255, 109, 85, .12);
+  border: 1px solid rgba(255, 109, 85, .28);
+}
+
+.faction-badge--alliance {
+  color: #d8ecff;
+  background: rgba(141, 200, 255, .12);
+  border: 1px solid rgba(141, 200, 255, .28);
+}
+
+.character-grid strong {
+  text-align: right;
+}
+
+@media(max-width:1320px){
+  .game-hud-topbar{grid-template-columns:1fr 210px;}
+  .hud-resources{grid-column:1/-1;}
+  .hud-sound{grid-column:2;grid-row:2;}
+  .workspace--3d,.workspace--game-hud{grid-template-columns:minmax(260px,.74fr) minmax(560px,1.26fr)}
+  .right-panel-shell{grid-column:1/-1}
+}
+
+@media(max-width:920px){
+  .game-hud-topbar,.journey-panel--hud,.workspace--3d,.workspace--game-hud{grid-template-columns:1fr}
+  .hud-resources{grid-template-columns:repeat(3,1fr)}
+  .hud-sound{grid-column:auto;grid-row:auto}
+  .go-3d-shell{min-height:460px;height:62vh}
+}
