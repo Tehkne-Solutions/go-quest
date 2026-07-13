@@ -18,8 +18,9 @@ const soundMap: Record<BoardFxType | "ui", SoundShape> = {
   ui: { frequency: 320, endFrequency: 460, duration: 0.08, gain: 0.025, wave: "square" }
 };
 
-function createContext() {
+function createContext(): AudioContext | undefined {
   const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextCtor) return undefined;
   return new AudioContextCtor();
 }
 
@@ -32,6 +33,7 @@ export function useSoundFx(initialMuted = false) {
       if (muted || typeof window === "undefined") return;
 
       const context = audioContextRef.current ?? createContext();
+      if (!context) return;
       audioContextRef.current = context;
 
       if (context.state === "suspended") {
