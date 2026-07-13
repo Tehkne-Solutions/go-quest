@@ -3,6 +3,8 @@ import { CameraControls, type BoardCamera } from "../components/board/CameraCont
 import { RightPanelTabs } from "../components/panels/RightPanelTabs";
 import { TutorGoPanel } from "../components/tutor/TutorGoPanel";
 import { GoScene3D } from "../3d/scene/GoScene3D";
+import type { BoardFxEvent, BoardFxType } from "../3d/types/render3d";
+import { useSoundFx } from "../audio/useSoundFx";
 import { createStoneCharacter, getRoleForMission } from "../data/characters";
 import { missions } from "../data/missions";
 import { puzzles } from "../data/puzzles";
@@ -11,32 +13,416 @@ import { playMove } from "../engine/playMove";
 import type { CharacterRole, StoneCharacter } from "../types/character";
 import type { Board, CaptureCounter, MissionId, PlayerColor, Position } from "../types/game";
 import type { TutorEvent } from "../types/tutor";
-type MedalId="breath-master"|"first-capture"|"squad-link"; type Mode="mission"|"puzzle"|"free";
-type ProgressState={xp:number;completedMissions:MissionId[];completedPuzzles:string[];medals:MedalId[]};
-const progressStorageKey="goquest-progress-v60";
-const medalLabels:Record<MedalId,string>={"breath-master":"Guardião das Liberdades","first-capture":"Primeira Captura","squad-link":"Conector de Squads"};
-const missionRewards:Record<MissionId,{xp:number;medal:MedalId}>={breath:{xp:50,medal:"breath-master"},capture:{xp:75,medal:"first-capture"},squad:{xp:75,medal:"squad-link"}};
-const freeLesson={title:"Campo Livre",concept:"Experimentação 3D",intro:"Teste formações, cercos, conexões e captura sem objetivo fixo.",goal:"Clique nas interseções 3D. O motor do Go continua 2D e soberano.",successMessage:"Experimento registrado.",devGoal:"Separar motor de Go, adapter de render e cena 3D clicável."};
-function samePosition(a?:Position,b?:Position){return Boolean(a&&b&&a.x===b.x&&a.y===b.y)}
-function nextPlayer(player:PlayerColor):PlayerColor{return player==="BLACK"?"WHITE":"BLACK"}
-function getNextMissionId(current:MissionId){const index=missions.findIndex(m=>m.id===current);return missions[Math.min(index+1,missions.length-1)].id}
-function emptyProgress():ProgressState{return {xp:0,completedMissions:[],completedPuzzles:[],medals:[]}}
-function loadProgress():ProgressState{if(typeof window==="undefined")return emptyProgress();try{const saved=window.localStorage.getItem(progressStorageKey);if(!saved)return emptyProgress();const parsed=JSON.parse(saved) as Partial<ProgressState>;return {xp:parsed.xp??0,completedMissions:parsed.completedMissions??[],completedPuzzles:parsed.completedPuzzles??[],medals:parsed.medals??[]}}catch{return emptyProgress()}}
-function roleForPuzzle(concept:string):CharacterRole{const text=concept.toLowerCase();if(text.includes("captura")||text.includes("cerco"))return "HUNTER";if(text.includes("conex")||text.includes("conectar"))return "LINK";if(text.includes("territ"))return "BUILDER";if(text.includes("atari")||text.includes("salvar"))return "GUARD";return "SCOUT"}
-export function BoardScreen(){
- const [mode,setMode]=useState<Mode>("mission"); const [missionId,setMissionId]=useState<MissionId>("breath"); const [puzzleId,setPuzzleId]=useState(puzzles[0].id); const [progress,setProgress]=useState<ProgressState>(()=>loadProgress());
- const mission=useMemo(()=>missions.find(i=>i.id===missionId)??missions[0],[missionId]); const puzzle=useMemo(()=>puzzles.find(i=>i.id===puzzleId)??puzzles[0],[puzzleId]); const activeLesson=mode==="mission"?mission:mode==="puzzle"?puzzle:freeLesson; const targetMove=mode==="mission"?mission.expectedMove:mode==="puzzle"?puzzle.solution:undefined;
- const [board,setBoard]=useState<Board>(()=>mission.createInitialBoard()); const [currentPlayer,setCurrentPlayer]=useState<PlayerColor>("BLACK"); const [message,setMessage]=useState("O campo 3D está pronto. Clique em uma interseção."); const [tutorEvents,setTutorEvents]=useState<TutorEvent[]>([]); const [selectedEventIndex,setSelectedEventIndex]=useState(0); const [captures,setCaptures]=useState<CaptureCounter>({BLACK:0,WHITE:0}); const [showTarget,setShowTarget]=useState(true); const [boardCamera,setBoardCamera]=useState<BoardCamera>("iso"); const [selectedCharacter,setSelectedCharacter]=useState<StoneCharacter|undefined>(); const [selectedPosition,setSelectedPosition]=useState<Position|undefined>(); const [hasPlayedCurrentRun,setHasPlayedCurrentRun]=useState(false);
- const isMissionComplete=progress.completedMissions.includes(mission.id); const isPuzzleComplete=progress.completedPuzzles.includes(puzzle.id);
- useEffect(()=>{window.localStorage.setItem(progressStorageKey,JSON.stringify(progress))},[progress]);
- function resetShared(){setTutorEvents([]);setSelectedEventIndex(0);setSelectedCharacter(undefined);setSelectedPosition(undefined);setHasPlayedCurrentRun(false);setCaptures({BLACK:0,WHITE:0})}
- function loadMission(nextMissionId=mission.id){const nextMission=missions.find(i=>i.id===nextMissionId)??missions[0];setMode("mission");setMissionId(nextMission.id);setBoard(nextMission.createInitialBoard());setCurrentPlayer(nextMission.player);resetShared();setShowTarget(true);setMessage("Missão 3D carregada. Clique na interseção, não na peça.")}
- function loadPuzzle(nextPuzzleId=puzzle.id){const nextPuzzle=puzzles.find(i=>i.id===nextPuzzleId)??puzzles[0];setMode("puzzle");setPuzzleId(nextPuzzle.id);setBoard(nextPuzzle.createInitialBoard());setCurrentPlayer("BLACK");resetShared();setShowTarget(true);setMessage("Puzzle 3D carregado. Encontre a melhor interseção.")}
- function openFreeMode(){setMode("free");setBoard(createBoard(5));setCurrentPlayer("BLACK");resetShared();setShowTarget(false);setMessage("Campo livre 3D aberto. A jogabilidade está presa às interseções.")}
- function clearProgress(){window.localStorage.removeItem(progressStorageKey);setProgress(emptyProgress());loadMission("breath");setMessage("Progresso local limpo. A campanha 3D reiniciou.")}
- function completeMission(){const reward=missionRewards[mission.id];setProgress(c=>c.completedMissions.includes(mission.id)?c:{...c,xp:c.xp+reward.xp,completedMissions:[...c.completedMissions,mission.id],medals:c.medals.includes(reward.medal)?c.medals:[...c.medals,reward.medal]})}
- function completePuzzle(){setProgress(c=>c.completedPuzzles.includes(puzzle.id)?c:{...c,xp:c.xp+35,completedPuzzles:[...c.completedPuzzles,puzzle.id]})}
- function handlePlay(position:Position){const clickedCell=board[position.y][position.x];if(clickedCell.state!=="EMPTY"){setSelectedCharacter(clickedCell.character);setSelectedPosition(position);setMessage(clickedCell.character?`${clickedCell.character.name} selecionado no campo 3D.`:"Unidade selecionada.");return} if(mode!=="free"&&hasPlayedCurrentRun){setMessage("Rodada já concluída neste replay. Use Rejogar ou avance para outro desafio.");return} const role=mode==="mission"?getRoleForMission(mission.id):mode==="puzzle"?roleForPuzzle(puzzle.concept):"SCOUT"; const actor=createStoneCharacter(currentPlayer,role,position,progress.xp+captures[currentPlayer]); const result=playMove(board,position,currentPlayer,actor); setTutorEvents(result.tutorEvents);setSelectedEventIndex(Math.max(0,result.tutorEvents.length-1));setMessage(result.message); if(!result.success)return; setBoard(result.board);setSelectedCharacter(actor);setSelectedPosition(position);setHasPlayedCurrentRun(mode!=="free"); if(result.captured.length>0)setCaptures(c=>({...c,[currentPlayer]:c[currentPlayer]+result.captured.length})); if(samePosition(position,targetMove)&&mode==="mission"){completeMission();setMessage(mission.successMessage);return} if(samePosition(position,targetMove)&&mode==="puzzle"){completePuzzle();setMessage(puzzle.successMessage);return} setCurrentPlayer(nextPlayer(currentPlayer))}
- function goToNextMission(){loadMission(getNextMissionId(mission.id))} function goToNextPuzzle(){const index=puzzles.findIndex(i=>i.id===puzzle.id);loadPuzzle(puzzles[Math.min(index+1,puzzles.length-1)].id)}
- return <main className="app-shell app-shell--game app-shell--3d"><header className="hero game-hero"><div><p className="eyebrow">GoQuest Sprint 6.0</p><h1>Reino do Tabuleiro 3D</h1><p>Motor de Go 2D preservado, cena 3D real e clique preso à interseção lógica.</p></div><div className="signature">Tehkné Solutions</div></header><nav className="game-menu" aria-label="Menu de jogo"><button type="button" onClick={()=>loadMission(mission.id)}>Jornada</button><button type="button" onClick={()=>loadPuzzle(puzzle.id)}>Puzzles</button><button type="button" onClick={openFreeMode}>Campo livre</button><button type="button" onClick={()=>setShowTarget(v=>!v)}>{showTarget?"Dica ativa":"Dica oculta"}</button><button type="button" onClick={()=>mode==="mission"?loadMission(mission.id):mode==="puzzle"?loadPuzzle(puzzle.id):openFreeMode()}>Rejogar</button><button type="button" onClick={clearProgress}>Limpar progresso</button></nav><section className="status-bar"><div><strong>Turno</strong><span>{currentPlayer==="BLACK"?"Preta":"Branca"}</span></div><div><strong>XP</strong><span>{progress.xp}</span></div><div><strong>Missões</strong><span>{progress.completedMissions.length}/{missions.length}</span></div><div><strong>Puzzles</strong><span>{progress.completedPuzzles.length}/{puzzles.length}</span></div></section><section className="journey-panel"><div><p className="eyebrow">Mapa da campanha</p><h2>{mode==="puzzle"?"Arena de Puzzles":mode==="free"?"Campo Livre":"O Tabuleiro Vivo"}</h2><p>{mode==="puzzle"?"Resolva desafios curtos de leitura estratégica.":"Aprenda a respirar, capturar e conectar."}</p></div><div className="mission-tabs">{mode==="puzzle"?puzzles.map(item=><button key={item.id} className={item.id===puzzle.id?"mission-tab mission-tab--active":"mission-tab"} type="button" onClick={()=>loadPuzzle(item.id)}><span>{progress.completedPuzzles.includes(item.id)?"✓":item.id.replace("p","")}</span><strong>{item.title}</strong></button>):missions.map(item=><button key={item.id} className={item.id===mission.id&&mode==="mission"?"mission-tab mission-tab--active":"mission-tab"} type="button" onClick={()=>loadMission(item.id)}><span>{progress.completedMissions.includes(item.id)?"✓":"•"}</span><strong>{item.title}</strong></button>)}</div>{progress.medals.length>0&&<div className="medal-row">{progress.medals.map(medal=><span key={medal}>{medalLabels[medal]}</span>)}</div>}</section><section className="workspace workspace--cinematic workspace--3d"><TutorGoPanel mission={activeLesson} message={message}/><section className="board-card board-card--cinematic board-card--3d"><div className="board-header"><div><p className="eyebrow">Renderer 3D</p><h2>{activeLesson.concept}</h2></div><div className="board-header-actions"><CameraControls value={boardCamera} onChange={setBoardCamera}/><button type="button" onClick={()=>setShowTarget(v=>!v)}>{showTarget?"Ocultar dica":"Mostrar dica"}</button></div></div><GoScene3D board={board} expectedMove={targetMove} selectedPosition={selectedPosition} showTarget={showTarget} camera={boardCamera} onIntersectionClick={handlePlay}/><div className="board-actions"><button type="button" onClick={()=>mode==="mission"?loadMission(mission.id):mode==="puzzle"?loadPuzzle(puzzle.id):openFreeMode()}>Rejogar</button>{mode==="mission"&&<button type="button" onClick={goToNextMission} disabled={mission.id===missions[missions.length-1].id}>Próxima missão</button>}{mode==="puzzle"&&<button type="button" onClick={goToNextPuzzle} disabled={puzzle.id===puzzles[puzzles.length-1].id}>Próximo puzzle</button>}</div>{mode==="mission"&&isMissionComplete&&<div className="success-card"><strong>Missão concluída</strong><span>{mission.successMessage}</span></div>}{mode==="puzzle"&&isPuzzleComplete&&<div className="success-card"><strong>Puzzle concluído</strong><span>{puzzle.successMessage}</span></div>}</section><RightPanelTabs board={board} selectedCharacter={selectedCharacter} selectedEvent={tutorEvents[selectedEventIndex]} devGoal={activeLesson.devGoal} events={tutorEvents} selectedEventIndex={selectedEventIndex} onSelectEvent={setSelectedEventIndex}/></section></main>
+
+type MedalId = "breath-master" | "first-capture" | "squad-link";
+type Mode = "mission" | "puzzle" | "free";
+
+type ProgressState = {
+  xp: number;
+  completedMissions: MissionId[];
+  completedPuzzles: string[];
+  medals: MedalId[];
+};
+
+const progressStorageKey = "goquest-progress-v62";
+
+const medalLabels: Record<MedalId, string> = {
+  "breath-master": "Guardião das Liberdades",
+  "first-capture": "Primeira Captura",
+  "squad-link": "Conector de Squads"
+};
+
+const missionRewards: Record<MissionId, { xp: number; medal: MedalId }> = {
+  breath: { xp: 50, medal: "breath-master" },
+  capture: { xp: 75, medal: "first-capture" },
+  squad: { xp: 75, medal: "squad-link" }
+};
+
+const freeLesson = {
+  title: "Campo Livre",
+  concept: "Arena livre",
+  intro: "Teste formações, cercos, conexões e captura sem objetivo fixo.",
+  goal: "Clique nos pedestais 3D. O motor do Go continua 2D e soberano.",
+  successMessage: "Experimento registrado.",
+  devGoal: "Separar motor de Go, HUD, FX, áudio e cena 3D clicável."
+};
+
+function samePosition(a?: Position, b?: Position): boolean {
+  return Boolean(a && b && a.x === b.x && a.y === b.y);
+}
+
+function nextPlayer(player: PlayerColor): PlayerColor {
+  return player === "BLACK" ? "WHITE" : "BLACK";
+}
+
+function playerFaction(player: PlayerColor) {
+  return player === "BLACK" ? "Horda" : "Aliança";
+}
+
+function getNextMissionId(current: MissionId): MissionId {
+  const index = missions.findIndex((mission) => mission.id === current);
+  return missions[Math.min(index + 1, missions.length - 1)].id;
+}
+
+function emptyProgress(): ProgressState {
+  return { xp: 0, completedMissions: [], completedPuzzles: [], medals: [] };
+}
+
+function loadProgress(): ProgressState {
+  if (typeof window === "undefined") return emptyProgress();
+
+  try {
+    const saved = window.localStorage.getItem(progressStorageKey);
+    if (!saved) return emptyProgress();
+    const parsed = JSON.parse(saved) as Partial<ProgressState>;
+
+    return {
+      xp: parsed.xp ?? 0,
+      completedMissions: parsed.completedMissions ?? [],
+      completedPuzzles: parsed.completedPuzzles ?? [],
+      medals: parsed.medals ?? []
+    };
+  } catch {
+    return emptyProgress();
+  }
+}
+
+function roleForPuzzle(concept: string): CharacterRole {
+  const text = concept.toLowerCase();
+  if (text.includes("captura") || text.includes("cerco")) return "HUNTER";
+  if (text.includes("conex") || text.includes("conectar")) return "LINK";
+  if (text.includes("territ")) return "BUILDER";
+  if (text.includes("atari") || text.includes("salvar")) return "GUARD";
+  return "SCOUT";
+}
+
+function hasAdjacentAlly(board: Board, position: Position, player: PlayerColor): boolean {
+  const directions = [
+    { x: 0, y: -1 },
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 }
+  ];
+
+  return directions.some((direction) => {
+    const y = position.y + direction.y;
+    const x = position.x + direction.x;
+    return board[y]?.[x]?.state === player;
+  });
+}
+
+export function BoardScreen() {
+  const [mode, setMode] = useState<Mode>("mission");
+  const [missionId, setMissionId] = useState<MissionId>("breath");
+  const [puzzleId, setPuzzleId] = useState(puzzles[0].id);
+  const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
+
+  const mission = useMemo(() => missions.find((item) => item.id === missionId) ?? missions[0], [missionId]);
+  const puzzle = useMemo(() => puzzles.find((item) => item.id === puzzleId) ?? puzzles[0], [puzzleId]);
+  const activeLesson = mode === "mission" ? mission : mode === "puzzle" ? puzzle : freeLesson;
+  const targetMove = mode === "mission" ? mission.expectedMove : mode === "puzzle" ? puzzle.solution : undefined;
+
+  const [board, setBoard] = useState<Board>(() => mission.createInitialBoard());
+  const [currentPlayer, setCurrentPlayer] = useState<PlayerColor>("BLACK");
+  const [message, setMessage] = useState("A arena está pronta. Clique em um pedestal.");
+  const [tutorEvents, setTutorEvents] = useState<TutorEvent[]>([]);
+  const [selectedEventIndex, setSelectedEventIndex] = useState(0);
+  const [captures, setCaptures] = useState<CaptureCounter>({ BLACK: 0, WHITE: 0 });
+  const [showTarget, setShowTarget] = useState(true);
+  const [boardCamera, setBoardCamera] = useState<BoardCamera>("iso");
+  const [selectedCharacter, setSelectedCharacter] = useState<StoneCharacter | undefined>();
+  const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
+  const [hasPlayedCurrentRun, setHasPlayedCurrentRun] = useState(false);
+  const [fxEvents, setFxEvents] = useState<BoardFxEvent[]>([]);
+  const { muted, play, toggleMuted } = useSoundFx();
+
+  const isMissionComplete = progress.completedMissions.includes(mission.id);
+  const isPuzzleComplete = progress.completedPuzzles.includes(puzzle.id);
+
+  useEffect(() => {
+    window.localStorage.setItem(progressStorageKey, JSON.stringify(progress));
+  }, [progress]);
+
+  function pushFx(type: BoardFxType, position: Position, color?: PlayerColor, role?: CharacterRole) {
+    const event: BoardFxEvent = {
+      id: `${type}_${position.x}_${position.y}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      type,
+      position,
+      color,
+      role,
+      createdAt: Date.now()
+    };
+
+    setFxEvents((current) => [...current.slice(-10), event]);
+    window.setTimeout(() => {
+      setFxEvents((current) => current.filter((item) => item.id !== event.id));
+    }, type === "mission" ? 1300 : 900);
+  }
+
+  function resetShared() {
+    setTutorEvents([]);
+    setSelectedEventIndex(0);
+    setSelectedCharacter(undefined);
+    setSelectedPosition(undefined);
+    setHasPlayedCurrentRun(false);
+    setCaptures({ BLACK: 0, WHITE: 0 });
+    setFxEvents([]);
+  }
+
+  function loadMission(nextMissionId = mission.id) {
+    const nextMission = missions.find((item) => item.id === nextMissionId) ?? missions[0];
+    setMode("mission");
+    setMissionId(nextMission.id);
+    setBoard(nextMission.createInitialBoard());
+    setCurrentPlayer(nextMission.player);
+    resetShared();
+    setShowTarget(true);
+    play("ui");
+    setMessage("Missão carregada. Convoque no pedestal indicado e observe os FX.");
+  }
+
+  function loadPuzzle(nextPuzzleId = puzzle.id) {
+    const nextPuzzle = puzzles.find((item) => item.id === nextPuzzleId) ?? puzzles[0];
+    setMode("puzzle");
+    setPuzzleId(nextPuzzle.id);
+    setBoard(nextPuzzle.createInitialBoard());
+    setCurrentPlayer("BLACK");
+    resetShared();
+    setShowTarget(true);
+    play("ui");
+    setMessage("Puzzle carregado. Encontre a melhor interseção.");
+  }
+
+  function openFreeMode() {
+    setMode("free");
+    setBoard(createBoard(5));
+    setCurrentPlayer("BLACK");
+    resetShared();
+    setShowTarget(false);
+    play("ui");
+    setMessage("Campo livre aberto. A jogabilidade está presa aos pedestais lógicos.");
+  }
+
+  function clearProgress() {
+    window.localStorage.removeItem(progressStorageKey);
+    setProgress(emptyProgress());
+    loadMission("breath");
+    setMessage("Progresso local limpo. A campanha reiniciou.");
+  }
+
+  function completeMission(position: Position, color: PlayerColor, role: CharacterRole) {
+    const reward = missionRewards[mission.id];
+    setProgress((current) => {
+      if (current.completedMissions.includes(mission.id)) return current;
+      return {
+        ...current,
+        xp: current.xp + reward.xp,
+        completedMissions: [...current.completedMissions, mission.id],
+        medals: current.medals.includes(reward.medal) ? current.medals : [...current.medals, reward.medal]
+      };
+    });
+    pushFx("mission", position, color, role);
+    play("mission");
+  }
+
+  function completePuzzle(position: Position, color: PlayerColor, role: CharacterRole) {
+    setProgress((current) => {
+      if (current.completedPuzzles.includes(puzzle.id)) return current;
+      return { ...current, xp: current.xp + 35, completedPuzzles: [...current.completedPuzzles, puzzle.id] };
+    });
+    pushFx("mission", position, color, role);
+    play("mission");
+  }
+
+  function handlePlay(position: Position) {
+    const clickedCell = board[position.y][position.x];
+
+    if (clickedCell.state !== "EMPTY") {
+      setSelectedCharacter(clickedCell.character);
+      setSelectedPosition(position);
+      pushFx("select", position, clickedCell.state, clickedCell.character?.role);
+      play("select");
+      setMessage(clickedCell.character ? `${clickedCell.character.name} selecionado no campo.` : "Unidade selecionada.");
+      return;
+    }
+
+    if (mode !== "free" && hasPlayedCurrentRun) {
+      setMessage("Rodada já concluída neste replay. Use Rejogar ou avance para outro desafio.");
+      return;
+    }
+
+    const role = mode === "mission" ? getRoleForMission(mission.id) : mode === "puzzle" ? roleForPuzzle(puzzle.concept) : "SCOUT";
+    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
+    const result = playMove(board, position, currentPlayer, actor);
+
+    setTutorEvents(result.tutorEvents);
+    setSelectedEventIndex(Math.max(0, result.tutorEvents.length - 1));
+    setMessage(result.message);
+
+    if (!result.success) return;
+
+    const joinedGroup = hasAdjacentAlly(result.board, position, currentPlayer);
+
+    setBoard(result.board);
+    setSelectedCharacter(actor);
+    setSelectedPosition(position);
+    setHasPlayedCurrentRun(mode !== "free");
+    pushFx("spawn", position, currentPlayer, role);
+    play("spawn");
+
+    if (joinedGroup) {
+      pushFx("group", position, currentPlayer, role);
+      play("group");
+    }
+
+    if (result.captured.length > 0) {
+      setCaptures((current) => ({ ...current, [currentPlayer]: current[currentPlayer] + result.captured.length }));
+      result.captured.forEach((capturedPosition) => pushFx("capture", capturedPosition, nextPlayer(currentPlayer), role));
+      play("capture");
+    }
+
+    if (samePosition(position, targetMove) && mode === "mission") {
+      completeMission(position, currentPlayer, role);
+      setMessage(mission.successMessage);
+      return;
+    }
+
+    if (samePosition(position, targetMove) && mode === "puzzle") {
+      completePuzzle(position, currentPlayer, role);
+      setMessage(puzzle.successMessage);
+      return;
+    }
+
+    setCurrentPlayer(nextPlayer(currentPlayer));
+  }
+
+  function goToNextMission() {
+    loadMission(getNextMissionId(mission.id));
+  }
+
+  function goToNextPuzzle() {
+    const index = puzzles.findIndex((item) => item.id === puzzle.id);
+    loadPuzzle(puzzles[Math.min(index + 1, puzzles.length - 1)].id);
+  }
+
+  return (
+    <main className="app-shell app-shell--game app-shell--3d app-shell--hud">
+      <header className="game-hud-topbar">
+        <div className="hud-brand">
+          <div className="hud-crest">GQ</div>
+          <div>
+            <p className="eyebrow">GoQuest Sprint 6.2</p>
+            <h1>Reino do Tabuleiro 3D</h1>
+            <span>HUD tático, facções, partículas e áudio procedural.</span>
+          </div>
+        </div>
+
+        <div className={`hud-turn hud-turn--${currentPlayer === "BLACK" ? "horde" : "alliance"}`}>
+          <small>Turno</small>
+          <strong>{playerFaction(currentPlayer)}</strong>
+          <span>{currentPlayer === "BLACK" ? "Pretas" : "Brancas"}</span>
+        </div>
+
+        <div className="hud-resources">
+          <div><small>XP</small><strong>{progress.xp}</strong></div>
+          <div><small>Missões</small><strong>{progress.completedMissions.length}/{missions.length}</strong></div>
+          <div><small>Puzzles</small><strong>{progress.completedPuzzles.length}/{puzzles.length}</strong></div>
+        </div>
+
+        <button type="button" className="hud-sound" onClick={() => { toggleMuted(); play("ui"); }}>
+          {muted ? "Som OFF" : "Som ON"}
+        </button>
+      </header>
+
+      <nav className="game-menu game-menu--hud" aria-label="Menu de jogo">
+        <button type="button" onClick={() => loadMission(mission.id)}>Jornada</button>
+        <button type="button" onClick={() => loadPuzzle(puzzle.id)}>Puzzles</button>
+        <button type="button" onClick={openFreeMode}>Campo livre</button>
+        <button type="button" onClick={() => setShowTarget((value) => !value)}>{showTarget ? "Dica ativa" : "Dica oculta"}</button>
+        <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>Rejogar</button>
+        <button type="button" onClick={clearProgress}>Limpar progresso</button>
+      </nav>
+
+      <section className="journey-panel journey-panel--hud">
+        <div>
+          <p className="eyebrow">Mapa da campanha</p>
+          <h2>{mode === "puzzle" ? "Arena de Puzzles" : mode === "free" ? "Campo Livre" : "O Tabuleiro Vivo"}</h2>
+          <p>{mode === "puzzle" ? "Resolva desafios curtos de leitura estratégica." : "Aprenda a respirar, capturar e conectar."}</p>
+        </div>
+
+        <div className="mission-tabs">
+          {mode === "puzzle"
+            ? puzzles.map((item) => (
+                <button key={item.id} className={item.id === puzzle.id ? "mission-tab mission-tab--active" : "mission-tab"} type="button" onClick={() => loadPuzzle(item.id)}>
+                  <span>{progress.completedPuzzles.includes(item.id) ? "✓" : item.id.replace("p", "")}</span>
+                  <strong>{item.title}</strong>
+                </button>
+              ))
+            : missions.map((item) => (
+                <button key={item.id} className={item.id === mission.id && mode === "mission" ? "mission-tab mission-tab--active" : "mission-tab"} type="button" onClick={() => loadMission(item.id)}>
+                  <span>{progress.completedMissions.includes(item.id) ? "✓" : "•"}</span>
+                  <strong>{item.title}</strong>
+                </button>
+              ))}
+        </div>
+
+        {progress.medals.length > 0 && (
+          <div className="medal-row">
+            {progress.medals.map((medal) => <span key={medal}>{medalLabels[medal]}</span>)}
+          </div>
+        )}
+      </section>
+
+      <section className="workspace workspace--cinematic workspace--3d workspace--game-hud">
+        <TutorGoPanel mission={activeLesson} message={message} />
+
+        <section className="board-card board-card--cinematic board-card--3d board-card--hud">
+          <div className="board-header board-header--hud">
+            <div>
+              <p className="eyebrow">Arena de pedestais</p>
+              <h2>{activeLesson.concept}</h2>
+            </div>
+            <div className="board-header-actions">
+              <CameraControls value={boardCamera} onChange={(camera) => { setBoardCamera(camera); play("ui"); }} />
+              <button type="button" onClick={() => setShowTarget((value) => !value)}>
+                {showTarget ? "Ocultar dica" : "Mostrar dica"}
+              </button>
+            </div>
+          </div>
+
+          <GoScene3D
+            board={board}
+            expectedMove={targetMove}
+            selectedPosition={selectedPosition}
+            showTarget={showTarget}
+            camera={boardCamera}
+            fxEvents={fxEvents}
+            onIntersectionClick={handlePlay}
+          />
+
+          <div className="bottom-action-hud">
+            <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>
+              Rejogar
+            </button>
+            {mode === "mission" && <button type="button" onClick={goToNextMission} disabled={mission.id === missions[missions.length - 1].id}>Próxima missão</button>}
+            {mode === "puzzle" && <button type="button" onClick={goToNextPuzzle} disabled={puzzle.id === puzzles[puzzles.length - 1].id}>Próximo puzzle</button>}
+            <span>{message}</span>
+          </div>
+
+          {mode === "mission" && isMissionComplete && <div className="success-card"><strong>Missão concluída</strong><span>{mission.successMessage}</span></div>}
+          {mode === "puzzle" && isPuzzleComplete && <div className="success-card"><strong>Puzzle concluído</strong><span>{puzzle.successMessage}</span></div>}
+        </section>
+
+        <RightPanelTabs
+          board={board}
+          selectedCharacter={selectedCharacter}
+          selectedEvent={tutorEvents[selectedEventIndex]}
+          devGoal={activeLesson.devGoal}
+          events={tutorEvents}
+          selectedEventIndex={selectedEventIndex}
+          onSelectEvent={setSelectedEventIndex}
+        />
+      </section>
+    </main>
+  );
 }
