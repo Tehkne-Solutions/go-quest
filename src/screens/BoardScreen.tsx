@@ -5,7 +5,7 @@ import { TutorGoPanel } from "../components/tutor/TutorGoPanel";
 import { GoScene3D } from "../3d/scene/GoScene3D";
 import type { BoardFxEvent, BoardFxType } from "../3d/types/render3d";
 import { useSoundFx } from "../audio/useSoundFx";
-import { createStoneCharacter, getRoleForMission } from "../data/characters";
+import { createStoneCharacter, getRoleForMission, roleLabels } from "../data/characters";
 import { missions } from "../data/missions";
 import { puzzles } from "../data/puzzles";
 import { createBoard } from "../engine/createBoard";
@@ -24,7 +24,9 @@ type ProgressState = {
   medals: MedalId[];
 };
 
-const progressStorageKey = "goquest-progress-v62";
+const progressStorageKey = "goquest-progress-v63";
+
+const FREE_ROLE_CYCLE: CharacterRole[] = ["SCOUT", "HUNTER", "GUARD", "LINK", "BUILDER", "RAIDER"];
 
 const medalLabels: Record<MedalId, string> = {
   "breath-master": "Guardião das Liberdades",
@@ -134,8 +136,10 @@ export function BoardScreen() {
   const [selectedPosition, setSelectedPosition] = useState<Position | undefined>();
   const [hasPlayedCurrentRun, setHasPlayedCurrentRun] = useState(false);
   const [fxEvents, setFxEvents] = useState<BoardFxEvent[]>([]);
+  const [freeRoleIndex, setFreeRoleIndex] = useState(0);
   const { muted, play, toggleMuted } = useSoundFx();
 
+  const freeRole = FREE_ROLE_CYCLE[freeRoleIndex % FREE_ROLE_CYCLE.length];
   const isMissionComplete = progress.completedMissions.includes(mission.id);
   const isPuzzleComplete = progress.completedPuzzles.includes(puzzle.id);
 
@@ -197,10 +201,11 @@ export function BoardScreen() {
     setMode("free");
     setBoard(createBoard(5));
     setCurrentPlayer("BLACK");
+    setFreeRoleIndex(0);
     resetShared();
     setShowTarget(false);
     play("ui");
-    setMessage("Campo livre aberto. A jogabilidade está presa aos pedestais lógicos.");
+    setMessage("Campo livre aberto. Cada jogada alterna facção e a classe muda no ciclo de companhias.");
   }
 
   function clearProgress() {
@@ -251,8 +256,8 @@ export function BoardScreen() {
       return;
     }
 
-    const role = mode === "mission" ? getRoleForMission(mission.id) : mode === "puzzle" ? roleForPuzzle(puzzle.concept) : "SCOUT";
-    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
+    const role = mode === "mission" ? getRoleForMission(mission.id) : mode === "puzzle" ? roleForPuzzle(puzzle.concept) : freeRole;
+    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer] + freeRoleIndex);
     const result = playMove(board, position, currentPlayer, actor);
 
     setTutorEvents(result.tutorEvents);
@@ -293,6 +298,10 @@ export function BoardScreen() {
       return;
     }
 
+    if (mode === "free") {
+      setFreeRoleIndex((index) => (index + 1) % FREE_ROLE_CYCLE.length);
+    }
+
     setCurrentPlayer(nextPlayer(currentPlayer));
   }
 
@@ -311,9 +320,9 @@ export function BoardScreen() {
         <div className="hud-brand">
           <div className="hud-crest">GQ</div>
           <div>
-            <p className="eyebrow">GoQuest Sprint 6.2</p>
+            <p className="eyebrow">GoQuest Sprint 6.3</p>
             <h1>Reino do Tabuleiro 3D</h1>
-            <span>HUD tático, facções, partículas e áudio procedural.</span>
+            <span>HUD tático, facções, partículas e esculturas por classe.</span>
           </div>
         </div>
 
@@ -342,6 +351,22 @@ export function BoardScreen() {
         <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>Rejogar</button>
         <button type="button" onClick={clearProgress}>Limpar progresso</button>
       </nav>
+
+      {mode === "free" && (
+        <section className="free-role-selector" aria-label="Seletor de classe no campo livre">
+          <span>Próxima classe:</span>
+          {FREE_ROLE_CYCLE.map((role, index) => (
+            <button
+              key={role}
+              type="button"
+              className={index === freeRoleIndex ? "free-role-selector__button free-role-selector__button--active" : "free-role-selector__button"}
+              onClick={() => { setFreeRoleIndex(index); play("ui"); }}
+            >
+              {roleLabels[role]}
+            </button>
+          ))}
+        </section>
+      )}
 
       <section className="journey-panel journey-panel--hud">
         <div>
