@@ -21,6 +21,11 @@ export function CodexPanel() {
         As regras continuam sendo Go. A fantasia medieval transforma cada função estratégica em uma unidade memorável.
       </p>
 
+      <div className="codex-factions">
+        <article className="faction-badge faction-badge--horde">Pretas: Horda</article>
+        <article className="faction-badge faction-badge--alliance">Brancas: Aliança</article>
+      </div>
+
       <div className="codex-list">
         {roles.map(([role, label]) => (
           <article key={role}>
