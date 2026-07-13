@@ -2,7 +2,7 @@ import type { PlayerColor } from "./game";
 
 export type CharacterRole = "SCOUT" | "HUNTER" | "GUARD" | "LINK" | "BUILDER" | "RAIDER";
 
-export type CharacterFaction = "CROWN" | "VEIL";
+export type CharacterFaction = "HORDE" | "ALLIANCE";
 
 export type StoneCharacter = {
   id: string;
