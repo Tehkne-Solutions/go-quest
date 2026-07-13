@@ -24,8 +24,7 @@ type ProgressState = {
   medals: MedalId[];
 };
 
-const progressStorageKey = "goquest-progress-v63";
-
+const progressStorageKey = "goquest-progress-v64";
 const FREE_ROLE_CYCLE: CharacterRole[] = ["SCOUT", "HUNTER", "GUARD", "LINK", "BUILDER", "RAIDER"];
 
 const medalLabels: Record<MedalId, string> = {
@@ -43,10 +42,10 @@ const missionRewards: Record<MissionId, { xp: number; medal: MedalId }> = {
 const freeLesson = {
   title: "Campo Livre",
   concept: "Arena livre",
-  intro: "Teste formações, cercos, conexões e captura sem objetivo fixo.",
-  goal: "Clique nos pedestais 3D. O motor do Go continua 2D e soberano.",
+  intro: "Monte companhias, compare facções e teste o visual das classes sem travar em jogadas inválidas.",
+  goal: "Clique nos pedestais vazios para invocar múltiplas peças. Missões e puzzles continuam usando as regras do Go.",
   successMessage: "Experimento registrado.",
-  devGoal: "Separar motor de Go, HUD, FX, áudio e cena 3D clicável."
+  devGoal: "Modo livre como sandbox visual estável; modo missão/puzzle preserva o motor oficial do Go."
 };
 
 function samePosition(a?: Position, b?: Position): boolean {
@@ -111,6 +110,16 @@ function hasAdjacentAlly(board: Board, position: Position, player: PlayerColor):
     const x = position.x + direction.x;
     return board[y]?.[x]?.state === player;
   });
+}
+
+function placeStoneOnBoard(board: Board, position: Position, color: PlayerColor, character: StoneCharacter): Board {
+  return board.map((row) =>
+    row.map((cell) =>
+      samePosition(cell.position, position)
+        ? { ...cell, state: color, character }
+        : cell
+    )
+  );
 }
 
 export function BoardScreen() {
@@ -205,7 +214,7 @@ export function BoardScreen() {
     resetShared();
     setShowTarget(false);
     play("ui");
-    setMessage("Campo livre aberto. Cada jogada alterna facção e a classe muda no ciclo de companhias.");
+    setMessage("Campo livre sandbox aberto. Clique em vários pedestais vazios para montar companhias.");
   }
 
   function clearProgress() {
@@ -239,6 +248,31 @@ export function BoardScreen() {
     play("mission");
   }
 
+  function handleFreePlacement(position: Position) {
+    const role = freeRole;
+    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer] + freeRoleIndex);
+    const sandboxBoard = placeStoneOnBoard(board, position, currentPlayer, actor);
+    const joinedGroup = hasAdjacentAlly(sandboxBoard, position, currentPlayer);
+
+    setBoard(sandboxBoard);
+    setTutorEvents([]);
+    setSelectedEventIndex(0);
+    setSelectedCharacter(actor);
+    setSelectedPosition(position);
+    setHasPlayedCurrentRun(false);
+    pushFx("spawn", position, currentPlayer, role);
+    play("spawn");
+
+    if (joinedGroup) {
+      pushFx("group", position, currentPlayer, role);
+      play("group");
+    }
+
+    setMessage(`${playerFaction(currentPlayer)} invocou ${roleLabels[role]} em x:${position.x}, y:${position.y}.`);
+    setFreeRoleIndex((index) => (index + 1) % FREE_ROLE_CYCLE.length);
+    setCurrentPlayer(nextPlayer(currentPlayer));
+  }
+
   function handlePlay(position: Position) {
     const clickedCell = board[position.y][position.x];
 
@@ -251,13 +285,18 @@ export function BoardScreen() {
       return;
     }
 
-    if (mode !== "free" && hasPlayedCurrentRun) {
+    if (mode === "free") {
+      handleFreePlacement(position);
+      return;
+    }
+
+    if (hasPlayedCurrentRun) {
       setMessage("Rodada já concluída neste replay. Use Rejogar ou avance para outro desafio.");
       return;
     }
 
-    const role = mode === "mission" ? getRoleForMission(mission.id) : mode === "puzzle" ? roleForPuzzle(puzzle.concept) : freeRole;
-    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer] + freeRoleIndex);
+    const role = mode === "mission" ? getRoleForMission(mission.id) : roleForPuzzle(puzzle.concept);
+    const actor = createStoneCharacter(currentPlayer, role, position, progress.xp + captures[currentPlayer]);
     const result = playMove(board, position, currentPlayer, actor);
 
     setTutorEvents(result.tutorEvents);
@@ -267,11 +306,10 @@ export function BoardScreen() {
     if (!result.success) return;
 
     const joinedGroup = hasAdjacentAlly(result.board, position, currentPlayer);
-
     setBoard(result.board);
     setSelectedCharacter(actor);
     setSelectedPosition(position);
-    setHasPlayedCurrentRun(mode !== "free");
+    setHasPlayedCurrentRun(true);
     pushFx("spawn", position, currentPlayer, role);
     play("spawn");
 
@@ -298,10 +336,6 @@ export function BoardScreen() {
       return;
     }
 
-    if (mode === "free") {
-      setFreeRoleIndex((index) => (index + 1) % FREE_ROLE_CYCLE.length);
-    }
-
     setCurrentPlayer(nextPlayer(currentPlayer));
   }
 
@@ -320,9 +354,9 @@ export function BoardScreen() {
         <div className="hud-brand">
           <div className="hud-crest">GQ</div>
           <div>
-            <p className="eyebrow">GoQuest Sprint 6.3</p>
+            <p className="eyebrow">GoQuest Sprint 6.4</p>
             <h1>Reino do Tabuleiro 3D</h1>
-            <span>HUD tático, facções, partículas e esculturas por classe.</span>
+            <span>HUD tático, facções, partículas, texturas procedurais e sandbox livre estável.</span>
           </div>
         </div>
 
@@ -372,7 +406,7 @@ export function BoardScreen() {
         <div>
           <p className="eyebrow">Mapa da campanha</p>
           <h2>{mode === "puzzle" ? "Arena de Puzzles" : mode === "free" ? "Campo Livre" : "O Tabuleiro Vivo"}</h2>
-          <p>{mode === "puzzle" ? "Resolva desafios curtos de leitura estratégica." : "Aprenda a respirar, capturar e conectar."}</p>
+          <p>{mode === "free" ? "Sandbox visual para montar companhias sem bloquear múltiplas invocações." : mode === "puzzle" ? "Resolva desafios curtos de leitura estratégica." : "Aprenda a respirar, capturar e conectar."}</p>
         </div>
 
         <div className="mission-tabs">
@@ -426,9 +460,7 @@ export function BoardScreen() {
           />
 
           <div className="bottom-action-hud">
-            <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>
-              Rejogar
-            </button>
+            <button type="button" onClick={() => (mode === "mission" ? loadMission(mission.id) : mode === "puzzle" ? loadPuzzle(puzzle.id) : openFreeMode())}>Rejogar</button>
             {mode === "mission" && <button type="button" onClick={goToNextMission} disabled={mission.id === missions[missions.length - 1].id}>Próxima missão</button>}
             {mode === "puzzle" && <button type="button" onClick={goToNextPuzzle} disabled={puzzle.id === puzzles[puzzles.length - 1].id}>Próximo puzzle</button>}
             <span>{message}</span>
