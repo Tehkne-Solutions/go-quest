@@ -20,8 +20,13 @@ type CharacterPanelProps = {
 };
 
 const factionLabel = {
-  CROWN: "Coroa de Ônix",
-  VEIL: "Véu de Marfim"
+  HORDE: "Horda",
+  ALLIANCE: "Aliança"
+};
+
+const factionSubLabel = {
+  HORDE: "Preta — ferro bruto, vermelho queimado e tática agressiva",
+  ALLIANCE: "Branca — aço claro, ouro, azul e formação disciplinada"
 };
 
 export function CharacterPanel({ board, character }: CharacterPanelProps) {
@@ -51,10 +56,16 @@ export function CharacterPanel({ board, character }: CharacterPanelProps) {
         <>
           <h2>{character.name}</h2>
           <div className="character-title">{character.title}</div>
+          <div className={`faction-badge faction-badge--${character.faction.toLowerCase()}`}>
+            {factionLabel[character.faction]}
+          </div>
 
           <div className="character-grid">
-            <span>Facção</span>
+            <span>Exército</span>
             <strong>{factionLabel[character.faction]}</strong>
+
+            <span>Uniforme</span>
+            <strong>{factionSubLabel[character.faction]}</strong>
 
             <span>Papel</span>
             <strong>{character.role}</strong>
