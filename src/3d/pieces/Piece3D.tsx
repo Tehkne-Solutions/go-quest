@@ -1,193 +1,428 @@
-import { useEffect, useMemo, useRef } from "react";
-import { CanvasTexture, type Group } from "three";
+import { useEffect, useMemo } from "react";
+import { CanvasTexture, LinearFilter, type Intersection, type Object3D, type Raycaster } from "three";
 import type { CharacterRole } from "../../types/character";
 import type { PlayerColor } from "../../types/game";
 import type { Piece3DProps } from "../types/render3d";
 
-type RolePalette = {
-  horde: string;
-  alliance: string;
-  accent: string;
-  glow: string;
+const passThroughRaycast = (_raycaster: Raycaster, _intersects: Intersection<Object3D>[]) => undefined;
+
+type Paint = {
+  body: string;
+  trim: string;
+  shadow: string;
   metal: string;
+  cloth: string;
+  skin: string;
+  magic: string;
+  outline: string;
 };
 
-const rolePalette: Record<CharacterRole, RolePalette> = {
-  SCOUT: { horde: "#1f3f25", alliance: "#3f6f48", accent: "#82d66f", glow: "#86f28d", metal: "#8c6b3d" },
-  HUNTER: { horde: "#56341f", alliance: "#8a6138", accent: "#e2a75d", glow: "#f0c47a", metal: "#9f7447" },
-  GUARD: { horde: "#2e3441", alliance: "#d8d7cc", accent: "#d8b868", glow: "#f3d58d", metal: "#a9b2bd" },
-  LINK: { horde: "#382447", alliance: "#6553a5", accent: "#b887ff", glow: "#c69bff", metal: "#c2a26b" },
-  BUILDER: { horde: "#563520", alliance: "#9a6a38", accent: "#e0a85c", glow: "#ffc26a", metal: "#b77332" },
-  RAIDER: { horde: "#304522", alliance: "#6f7e55", accent: "#d76343", glow: "#f1785e", metal: "#6f6256" }
+const rolePaint: Record<CharacterRole, { horde: Partial<Paint>; alliance: Partial<Paint> }> = {
+  SCOUT: {
+    horde: { body: "#25462b", trim: "#c54d3d", cloth: "#351512", magic: "#8df08b" },
+    alliance: { body: "#47774b", trim: "#9ae38a", cloth: "#263f73", magic: "#9eefff" }
+  },
+  HUNTER: {
+    horde: { body: "#6a3d22", trim: "#d56446", cloth: "#461a14", magic: "#f0b56a" },
+    alliance: { body: "#8f6338", trim: "#e6b66f", cloth: "#263f73", magic: "#9ed4ff" }
+  },
+  GUARD: {
+    horde: { body: "#343945", trim: "#bf4a3d", cloth: "#4a1712", metal: "#6b6259", magic: "#ff755e" },
+    alliance: { body: "#cfd4d8", trim: "#dcb967", cloth: "#25427a", metal: "#e0dfd3", magic: "#8fc8ff" }
+  },
+  LINK: {
+    horde: { body: "#3b254a", trim: "#d45cff", cloth: "#461a2b", magic: "#ff70dd" },
+    alliance: { body: "#6553aa", trim: "#c69bff", cloth: "#263f73", magic: "#8dc8ff" }
+  },
+  BUILDER: {
+    horde: { body: "#6a3e21", trim: "#c04c39", cloth: "#3a1712", metal: "#a96a32", magic: "#ffc26a" },
+    alliance: { body: "#a56f3b", trim: "#e5b766", cloth: "#284170", metal: "#d09a4e", magic: "#8dc8ff" }
+  },
+  RAIDER: {
+    horde: { body: "#597a35", trim: "#e06043", cloth: "#40180f", skin: "#85a94d", magic: "#ff6d55" },
+    alliance: { body: "#718259", trim: "#d8b868", cloth: "#263f73", skin: "#9cab6a", magic: "#8dc8ff" }
+  }
 };
 
-function factionMeta(color: PlayerColor) {
-  return color === "BLACK"
-    ? { trim: "#b94636", cloth: "#4a1712", stone: "#181411", metal: "#4d4139", rune: "#ff6d55" }
-    : { trim: "#4777bf", cloth: "#263f73", stone: "#d7d0bd", metal: "#c8c2b4", rune: "#8dc8ff" };
+function factionPaint(color: PlayerColor, role: CharacterRole): Paint {
+  const base: Paint = color === "BLACK"
+    ? {
+        body: "#273423",
+        trim: "#b94636",
+        shadow: "#080607",
+        metal: "#5a5149",
+        cloth: "#471914",
+        skin: role === "RAIDER" ? "#82a64e" : "#c3895d",
+        magic: "#ff6d55",
+        outline: "#030303"
+      }
+    : {
+        body: "#d8d7cc",
+        trim: "#4777bf",
+        shadow: "#0b0d12",
+        metal: "#c8c2b4",
+        cloth: "#263f73",
+        skin: role === "RAIDER" ? "#9cab6a" : "#d4a176",
+        magic: "#8dc8ff",
+        outline: "#05070b"
+      };
+
+  return { ...base, ...(color === "BLACK" ? rolePaint[role].horde : rolePaint[role].alliance) };
 }
 
-function makeTexture(base: string, accent: string, trim: string, variant: CharacterRole | "STONE") {
+function drawEllipse(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBlade(ctx: CanvasRenderingContext2D, x: number, y: number, length: number, color: string, angle: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(0, -length / 2);
+  ctx.lineTo(10, length / 2 - 14);
+  ctx.lineTo(0, length / 2);
+  ctx.lineTo(-10, length / 2 - 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawTexturedStroke(ctx: CanvasRenderingContext2D, color: string, trim: string) {
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = trim;
+  ctx.lineWidth = 3;
+  for (let i = -80; i < 260; i += 22) {
+    ctx.beginPath();
+    ctx.moveTo(i, 20);
+    ctx.lineTo(i + 110, 270);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.18;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 260; i += 12) {
+    ctx.beginPath();
+    ctx.moveTo(18, i);
+    ctx.quadraticCurveTo(130, i + 20, 238, i - 8);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function makeCharacterTexture(role: CharacterRole, color: PlayerColor) {
+  const paint = factionPaint(color, role);
   const canvas = document.createElement("canvas");
-  canvas.width = 96;
-  canvas.height = 96;
+  canvas.width = 256;
+  canvas.height = 320;
   const ctx = canvas.getContext("2d");
   if (!ctx) return undefined;
 
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
 
-  const gradient = ctx.createLinearGradient(0, 0, 96, 96);
-  gradient.addColorStop(0, "rgba(255,255,255,0.18)");
-  gradient.addColorStop(0.48, "rgba(0,0,0,0.05)");
-  gradient.addColorStop(1, "rgba(0,0,0,0.28)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 96, 96);
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.75)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 14;
+  drawEllipse(ctx, 128, 278, 66, 18, "rgba(0,0,0,.4)");
+  ctx.restore();
 
-  ctx.strokeStyle = trim;
-  ctx.globalAlpha = 0.65;
-  ctx.lineWidth = 4;
+  // Aura/faction backplate.
+  ctx.save();
+  const aura = ctx.createRadialGradient(128, 160, 16, 128, 160, 120);
+  aura.addColorStop(0, `${paint.magic}88`);
+  aura.addColorStop(0.52, `${paint.magic}22`);
+  aura.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.ellipse(128, 166, 102, 130, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 
-  if (variant === "SCOUT") {
-    for (let x = -20; x < 120; x += 22) {
-      ctx.beginPath();
-      ctx.moveTo(x, 96);
-      ctx.lineTo(x + 56, 0);
-      ctx.stroke();
-    }
-  } else if (variant === "HUNTER") {
-    for (let y = 10; y < 96; y += 18) {
-      ctx.beginPath();
-      ctx.moveTo(6, y);
-      ctx.lineTo(90, y + 8);
-      ctx.stroke();
-    }
-  } else if (variant === "GUARD") {
-    for (let y = 8; y < 96; y += 20) ctx.strokeRect(8, y, 80, 12);
-  } else if (variant === "LINK") {
-    for (let i = 0; i < 6; i += 1) {
-      ctx.beginPath();
-      ctx.arc(48, 48, 10 + i * 7, 0, Math.PI * 1.4);
-      ctx.stroke();
-    }
-  } else if (variant === "BUILDER") {
-    for (let x = 8; x < 96; x += 22) {
-      for (let y = 8; y < 96; y += 22) ctx.strokeRect(x, y, 14, 14);
-    }
-  } else if (variant === "RAIDER") {
-    for (let i = 0; i < 8; i += 1) {
-      ctx.beginPath();
-      ctx.moveTo((i * 17) % 96, 0);
-      ctx.lineTo((i * 17 + 28) % 96, 96);
-      ctx.stroke();
-    }
-  } else {
-    for (let i = 0; i < 140; i += 1) {
-      const x = (i * 29) % 96;
-      const y = (i * 17) % 96;
-      ctx.fillStyle = i % 2 ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.12)";
-      ctx.fillRect(x, y, 3, 2);
-    }
-  }
+  // Cape / silhouette mass.
+  ctx.fillStyle = paint.outline;
+  ctx.beginPath();
+  ctx.moveTo(93, 95);
+  ctx.quadraticCurveTo(54, 146, 76, 262);
+  ctx.lineTo(180, 262);
+  ctx.quadraticCurveTo(202, 146, 163, 95);
+  ctx.closePath();
+  ctx.fill();
 
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = accent;
-  for (let i = 0; i < 9; i += 1) {
-    const x = 10 + ((i * 31) % 76);
-    const y = 12 + ((i * 19) % 70);
+  ctx.fillStyle = paint.cloth;
+  ctx.beginPath();
+  ctx.moveTo(98, 102);
+  ctx.quadraticCurveTo(62, 152, 83, 252);
+  ctx.lineTo(173, 252);
+  ctx.quadraticCurveTo(194, 152, 158, 102);
+  ctx.closePath();
+  ctx.fill();
+  drawTexturedStroke(ctx, paint.body, paint.trim);
+
+  // Legs.
+  ctx.strokeStyle = paint.outline;
+  ctx.lineWidth = 18;
+  ctx.beginPath();
+  ctx.moveTo(112, 208);
+  ctx.lineTo(92, 270);
+  ctx.moveTo(144, 208);
+  ctx.lineTo(166, 270);
+  ctx.stroke();
+
+  ctx.strokeStyle = paint.body;
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(112, 208);
+  ctx.lineTo(92, 270);
+  ctx.moveTo(144, 208);
+  ctx.lineTo(166, 270);
+  ctx.stroke();
+
+  // Torso.
+  ctx.fillStyle = paint.outline;
+  ctx.beginPath();
+  ctx.roundRect(86, 108, 84, 112, 22);
+  ctx.fill();
+
+  ctx.fillStyle = paint.body;
+  ctx.beginPath();
+  ctx.roundRect(93, 113, 70, 102, 19);
+  ctx.fill();
+
+  const armor = ctx.createLinearGradient(96, 116, 160, 210);
+  armor.addColorStop(0, "rgba(255,255,255,.28)");
+  armor.addColorStop(0.5, "rgba(255,255,255,.03)");
+  armor.addColorStop(1, "rgba(0,0,0,.28)");
+  ctx.fillStyle = armor;
+  ctx.beginPath();
+  ctx.roundRect(98, 118, 60, 92, 16);
+  ctx.fill();
+
+  // Trim and emblem.
+  ctx.strokeStyle = paint.trim;
+  ctx.lineWidth = 5;
+  ctx.strokeRect(103, 126, 50, 74);
+  ctx.fillStyle = paint.trim;
+  ctx.beginPath();
+  ctx.moveTo(128, 138);
+  ctx.lineTo(142, 158);
+  ctx.lineTo(128, 178);
+  ctx.lineTo(114, 158);
+  ctx.closePath();
+  ctx.fill();
+
+  // Arms.
+  ctx.strokeStyle = paint.outline;
+  ctx.lineWidth = 18;
+  ctx.beginPath();
+  ctx.moveTo(92, 132);
+  ctx.lineTo(55, 192);
+  ctx.moveTo(164, 132);
+  ctx.lineTo(204, 190);
+  ctx.stroke();
+  ctx.strokeStyle = paint.body;
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(92, 132);
+  ctx.lineTo(55, 192);
+  ctx.moveTo(164, 132);
+  ctx.lineTo(204, 190);
+  ctx.stroke();
+
+  // Head/hood.
+  drawEllipse(ctx, 128, 82, 32, 35, paint.outline);
+  drawEllipse(ctx, 128, 82, 25, 28, paint.skin);
+  ctx.fillStyle = paint.cloth;
+  ctx.beginPath();
+  ctx.moveTo(92, 88);
+  ctx.quadraticCurveTo(128, 30, 164, 88);
+  ctx.quadraticCurveTo(150, 63, 128, 61);
+  ctx.quadraticCurveTo(106, 63, 92, 88);
+  ctx.fill();
+
+  // Class-specific silhouette and props.
+  if (role === "SCOUT") {
+    drawBlade(ctx, 47, 203, 74, paint.metal, -0.62);
+    drawBlade(ctx, 211, 201, 74, paint.metal, 0.62);
+    ctx.strokeStyle = paint.trim;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(x, y, i % 3 === 0 ? 3 : 2, 0, Math.PI * 2);
+    ctx.moveTo(105, 105);
+    ctx.lineTo(82, 80);
+    ctx.moveTo(151, 105);
+    ctx.lineTo(174, 80);
+    ctx.stroke();
+  } else if (role === "HUNTER") {
+    ctx.strokeStyle = paint.trim;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(198, 152, 54, -1.3, 1.3);
+    ctx.stroke();
+    ctx.strokeStyle = paint.metal;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(196, 100);
+    ctx.lineTo(196, 205);
+    ctx.moveTo(183, 155);
+    ctx.lineTo(228, 148);
+    ctx.stroke();
+    ctx.fillStyle = paint.cloth;
+    ctx.fillRect(66, 86, 16, 95);
+  } else if (role === "GUARD") {
+    ctx.fillStyle = paint.metal;
+    ctx.beginPath();
+    ctx.roundRect(172, 130, 52, 76, 12);
+    ctx.fill();
+    ctx.strokeStyle = paint.trim;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(181, 143, 34, 50);
+    drawBlade(ctx, 50, 151, 115, paint.metal, 0.1);
+  } else if (role === "LINK") {
+    ctx.strokeStyle = paint.metal;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(58, 215);
+    ctx.lineTo(58, 85);
+    ctx.stroke();
+    drawEllipse(ctx, 58, 74, 17, 17, paint.magic);
+    drawEllipse(ctx, 205, 168, 20, 20, paint.magic);
+    ctx.strokeStyle = paint.magic;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(128, 151, 72, 28, -0.2, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (role === "BUILDER") {
+    ctx.strokeStyle = paint.metal;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(58, 195);
+    ctx.lineTo(89, 118);
+    ctx.stroke();
+    ctx.fillStyle = paint.trim;
+    ctx.beginPath();
+    ctx.roundRect(39, 105, 50, 24, 6);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,240,190,.85)";
+    ctx.beginPath();
+    ctx.roundRect(176, 144, 48, 62, 8);
+    ctx.fill();
+    ctx.strokeStyle = paint.trim;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(184, 154, 32, 42);
+  } else if (role === "RAIDER") {
+    ctx.fillStyle = paint.skin;
+    ctx.beginPath();
+    ctx.ellipse(99, 80, 12, 22, -0.7, 0, Math.PI * 2);
+    ctx.ellipse(157, 80, 12, 22, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = paint.metal;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(199, 214);
+    ctx.lineTo(171, 92);
+    ctx.stroke();
+    ctx.fillStyle = paint.metal;
+    ctx.beginPath();
+    ctx.moveTo(158, 78);
+    ctx.lineTo(207, 104);
+    ctx.lineTo(178, 126);
+    ctx.closePath();
     ctx.fill();
   }
 
+  // Highlight and outline pass.
+  ctx.strokeStyle = "rgba(255,255,255,.22)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(106, 119);
+  ctx.quadraticCurveTo(128, 105, 151, 119);
+  ctx.stroke();
+
+  ctx.globalCompositeOperation = "destination-over";
+  ctx.strokeStyle = "rgba(0,0,0,.82)";
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.roundRect(80, 50, 96, 216, 34);
+  ctx.stroke();
+  ctx.globalCompositeOperation = "source-over";
+
   const texture = new CanvasTexture(canvas);
+  texture.magFilter = LinearFilter;
+  texture.minFilter = LinearFilter;
   texture.needsUpdate = true;
   return texture;
 }
 
-function usePieceTextures(role: CharacterRole, color: PlayerColor, body: string, accent: string) {
-  const faction = factionMeta(color);
-  return useMemo(
-    () => ({
-      body: makeTexture(body, accent, faction.trim, role),
-      cloth: makeTexture(faction.cloth, accent, faction.trim, role),
-      metal: makeTexture(faction.metal, accent, faction.rune, "GUARD"),
-      stone: makeTexture(faction.stone, accent, faction.trim, "STONE")
-    }),
-    [accent, body, color, role]
-  );
-}
+function MiniaturePedestal({ color, accent, selected, formation }: { color: PlayerColor; accent: string; selected?: boolean; formation?: boolean }) {
+  const faction = factionPaint(color, "SCOUT");
+  const stone = color === "BLACK" ? "#181411" : "#d7d0bd";
+  const metal = color === "BLACK" ? "#4d4139" : "#c8c2b4";
+  const rune = color === "BLACK" ? "#ff6d55" : "#8dc8ff";
 
-function MiniaturePedestal({ color, accent, selected, formation, texture }: { color: PlayerColor; accent: string; selected?: boolean; formation?: boolean; texture?: CanvasTexture }) {
-  const faction = factionMeta(color);
   return (
     <group>
-      <mesh castShadow receiveShadow position={[0, 0.08, 0]}><cylinderGeometry args={[0.54, 0.62, 0.16, 48]} /><meshStandardMaterial map={texture} color={faction.stone} roughness={0.9} metalness={0.08} /></mesh>
-      <mesh castShadow receiveShadow position={[0, 0.18, 0]}><cylinderGeometry args={[0.44, 0.5, 0.12, 48]} /><meshStandardMaterial color={faction.metal} roughness={0.62} metalness={0.38} /></mesh>
-      <mesh castShadow receiveShadow position={[0, 0.27, 0]}><cylinderGeometry args={[0.34, 0.4, 0.1, 48]} /><meshStandardMaterial color={accent} roughness={0.48} metalness={0.24} emissive={formation ? faction.rune : "#000000"} emissiveIntensity={formation ? 0.24 : 0} /></mesh>
-      <mesh position={[0, 0.34, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.39, 0.44, 48]} /><meshStandardMaterial color={faction.trim} emissive={faction.rune} emissiveIntensity={0.1} /></mesh>
-      {selected && <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.56, 0.66, 56]} /><meshStandardMaterial color="#f3d58d" emissive="#f3d58d" emissiveIntensity={0.38} /></mesh>}
+      <mesh raycast={passThroughRaycast} castShadow receiveShadow position={[0, 0.08, 0]}>
+        <cylinderGeometry args={[0.5, 0.56, 0.16, 48]} />
+        <meshStandardMaterial color={stone} roughness={0.86} metalness={0.12} />
+      </mesh>
+      <mesh raycast={passThroughRaycast} castShadow receiveShadow position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.43, 0.49, 0.12, 48]} />
+        <meshStandardMaterial color={metal} roughness={0.62} metalness={0.38} />
+      </mesh>
+      <mesh raycast={passThroughRaycast} castShadow receiveShadow position={[0, 0.27, 0]}>
+        <cylinderGeometry args={[0.34, 0.39, 0.1, 48]} />
+        <meshStandardMaterial color={accent} roughness={0.48} metalness={0.24} emissive={formation ? rune : "#000000"} emissiveIntensity={formation ? 0.22 : 0} />
+      </mesh>
+      <mesh raycast={passThroughRaycast} position={[0, 0.34, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.39, 0.43, 48]} />
+        <meshStandardMaterial color={faction.trim} emissive={rune} emissiveIntensity={0.08} />
+      </mesh>
+      {selected && (
+        <mesh raycast={passThroughRaycast} position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.54, 0.63, 56]} />
+          <meshStandardMaterial color="#f3d58d" emissive="#f3d58d" emissiveIntensity={0.34} />
+        </mesh>
+      )}
     </group>
   );
 }
 
-function Rivets({ color }: { color: string }) {
-  return <group>{[-0.18, 0, 0.18].map((x, index) => <mesh key={index} castShadow position={[x, 0.94, 0.22]}><sphereGeometry args={[0.035, 10, 10]} /><meshStandardMaterial color={color} roughness={0.44} metalness={0.42} /></mesh>)}</group>;
-}
+function CharacterStandee({ role, color }: { role: CharacterRole; color: PlayerColor }) {
+  const texture = useMemo(() => makeCharacterTexture(role, color), [role, color]);
 
-function ScoutStatue({ texture, cloth, accent }: { texture?: CanvasTexture; cloth?: CanvasTexture; accent: string }) {
-  return <group><mesh castShadow position={[0, 0.74, 0]}><cylinderGeometry args={[0.16, 0.23, 0.62, 16]} /><meshStandardMaterial map={texture} color="#345b34" roughness={0.76} /></mesh><mesh castShadow position={[0, 1.14, 0]}><coneGeometry args={[0.22, 0.28, 20]} /><meshStandardMaterial map={texture} color="#2f4d32" roughness={0.78} /></mesh><mesh castShadow position={[0, 0.86, -0.1]} rotation={[0.2, 0, 0]}><coneGeometry args={[0.35, 0.76, 24]} /><meshStandardMaterial map={cloth} color="#233f2a" roughness={0.84} /></mesh><mesh castShadow position={[-0.3, 0.66, 0.02]} rotation={[0, 0, 0.95]}><coneGeometry args={[0.04, 0.52, 10]} /><meshStandardMaterial color={accent} roughness={0.38} metalness={0.48} /></mesh><mesh castShadow position={[0.3, 0.66, 0.02]} rotation={[0, 0, -0.95]}><coneGeometry args={[0.04, 0.52, 10]} /><meshStandardMaterial color={accent} roughness={0.38} metalness={0.48} /></mesh></group>;
-}
+  useEffect(() => {
+    return () => texture?.dispose();
+  }, [texture]);
 
-function HunterStatue({ texture, cloth, accent }: { texture?: CanvasTexture; cloth?: CanvasTexture; accent: string }) {
-  return <group><mesh castShadow position={[0, 0.72, 0]}><cylinderGeometry args={[0.18, 0.27, 0.58, 18]} /><meshStandardMaterial map={texture} color="#7b4e2b" roughness={0.72} /></mesh><mesh castShadow position={[0, 1.07, 0]}><sphereGeometry args={[0.17, 18, 18]} /><meshStandardMaterial color="#b88a5d" roughness={0.76} /></mesh><mesh castShadow position={[-0.18, 0.96, -0.08]} rotation={[0.42, 0, -0.35]}><cylinderGeometry args={[0.055, 0.055, 0.72, 12]} /><meshStandardMaterial map={cloth} color="#51321f" roughness={0.78} /></mesh><mesh castShadow position={[0.36, 0.76, 0.02]} rotation={[0, 0, -0.42]}><torusGeometry args={[0.3, 0.015, 8, 36, Math.PI]} /><meshStandardMaterial color={accent} roughness={0.5} metalness={0.24} /></mesh><mesh castShadow position={[0.4, 0.76, 0.03]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, 0.62, 8]} /><meshStandardMaterial color="#ded4bb" roughness={0.4} /></mesh></group>;
-}
+  if (!texture) return null;
 
-function GuardStatue({ texture, metal, accent }: { texture?: CanvasTexture; metal?: CanvasTexture; accent: string }) {
-  return <group><mesh castShadow position={[0, 0.76, 0]}><cylinderGeometry args={[0.25, 0.33, 0.7, 20]} /><meshStandardMaterial map={texture} color="#778394" roughness={0.48} metalness={0.46} /></mesh><mesh castShadow position={[0, 1.2, 0]}><boxGeometry args={[0.36, 0.28, 0.28]} /><meshStandardMaterial map={metal} color="#aeb5bd" roughness={0.42} metalness={0.46} /></mesh><mesh castShadow position={[0.38, 0.78, 0.04]}><boxGeometry args={[0.28, 0.64, 0.1]} /><meshStandardMaterial color={accent} roughness={0.52} metalness={0.28} /></mesh><mesh castShadow position={[-0.34, 0.68, 0.03]} rotation={[0, 0, 0.3]}><coneGeometry args={[0.045, 0.74, 12]} /><meshStandardMaterial color={accent} roughness={0.34} metalness={0.52} /></mesh><Rivets color={accent} /></group>;
-}
-
-function LinkStatue({ texture, cloth, accent, glow }: { texture?: CanvasTexture; cloth?: CanvasTexture; accent: string; glow: string }) {
-  return <group><mesh castShadow position={[0, 0.76, 0]}><cylinderGeometry args={[0.18, 0.29, 0.74, 22]} /><meshStandardMaterial map={texture} color="#60419b" roughness={0.62} /></mesh><mesh castShadow position={[0, 1.21, 0]}><sphereGeometry args={[0.17, 22, 22]} /><meshStandardMaterial color="#d1a17c" roughness={0.7} /></mesh><mesh castShadow position={[0, 0.68, -0.12]} rotation={[0.1, 0, 0]}><coneGeometry args={[0.38, 0.82, 28]} /><meshStandardMaterial map={cloth} color="#2d2350" roughness={0.78} /></mesh><mesh position={[-0.35, 1.05, 0]}><sphereGeometry args={[0.09, 22, 22]} /><meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={0.75} /></mesh><mesh position={[0.35, 1.02, 0]}><sphereGeometry args={[0.09, 22, 22]} /><meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.55} /></mesh><mesh position={[0, 0.98, 0.2]} rotation={[-Math.PI / 2, 0, 0]}><torusGeometry args={[0.32, 0.008, 8, 48]} /><meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.24} /></mesh></group>;
-}
-
-function BuilderStatue({ texture, metal, accent }: { texture?: CanvasTexture; metal?: CanvasTexture; accent: string }) {
-  return <group><mesh castShadow position={[0, 0.66, 0]}><cylinderGeometry args={[0.24, 0.34, 0.48, 20]} /><meshStandardMaterial map={texture} color="#8a572f" roughness={0.7} metalness={0.16} /></mesh><mesh castShadow position={[0, 1.0, 0]}><sphereGeometry args={[0.2, 22, 22]} /><meshStandardMaterial color="#b67445" roughness={0.78} /></mesh><mesh castShadow position={[0, 0.95, 0.02]}><sphereGeometry args={[0.24, 18, 18]} /><meshStandardMaterial color="#8d512d" roughness={0.9} /></mesh><mesh castShadow position={[-0.34, 0.72, 0]} rotation={[0, 0, 0.6]}><cylinderGeometry args={[0.04, 0.04, 0.55, 10]} /><meshStandardMaterial map={metal} color="#a56f38" roughness={0.42} metalness={0.42} /></mesh><mesh castShadow position={[-0.48, 0.92, 0]} rotation={[0, 0, 0.6]}><boxGeometry args={[0.22, 0.14, 0.14]} /><meshStandardMaterial color={accent} roughness={0.48} metalness={0.36} /></mesh><Rivets color={accent} /></group>;
-}
-
-function RaiderStatue({ texture, metal, accent, color }: { texture?: CanvasTexture; metal?: CanvasTexture; accent: string; color: PlayerColor }) {
-  return <group><mesh castShadow position={[0, 0.76, 0]}><cylinderGeometry args={[0.26, 0.36, 0.7, 18]} /><meshStandardMaterial map={texture} color="#435c2d" roughness={0.68} /></mesh><mesh castShadow position={[0, 1.22, 0]}><sphereGeometry args={[0.21, 22, 22]} /><meshStandardMaterial color={color === "BLACK" ? "#6e8f42" : "#89995d"} roughness={0.74} /></mesh><mesh castShadow position={[-0.22, 1.28, 0]} rotation={[0, 0, -0.55]}><coneGeometry args={[0.06, 0.28, 10]} /><meshStandardMaterial color={accent} /></mesh><mesh castShadow position={[0.22, 1.28, 0]} rotation={[0, 0, 0.55]}><coneGeometry args={[0.06, 0.28, 10]} /><meshStandardMaterial color={accent} /></mesh><mesh castShadow position={[0.34, 0.78, 0.04]} rotation={[0, 0, -0.56]}><cylinderGeometry args={[0.05, 0.05, 0.72, 10]} /><meshStandardMaterial color="#4f301d" /></mesh><mesh castShadow position={[0.48, 1.02, 0.04]} rotation={[0, 0, -0.56]}><coneGeometry args={[0.18, 0.32, 4]} /><meshStandardMaterial map={metal} color="#847b70" roughness={0.38} metalness={0.44} /></mesh><Rivets color={accent} /></group>;
-}
-
-function ClassSculpture({ role, color, body, accent, glow, textures }: { role: CharacterRole; color: PlayerColor; body: string; accent: string; glow: string; textures: ReturnType<typeof usePieceTextures> }) {
-  if (role === "HUNTER") return <HunterStatue texture={textures.body} cloth={textures.cloth} accent={accent} />;
-  if (role === "GUARD") return <GuardStatue texture={textures.body} metal={textures.metal} accent={accent} />;
-  if (role === "LINK") return <LinkStatue texture={textures.body} cloth={textures.cloth} accent={accent} glow={glow} />;
-  if (role === "BUILDER") return <BuilderStatue texture={textures.body} metal={textures.metal} accent={accent} />;
-  if (role === "RAIDER") return <RaiderStatue texture={textures.body} metal={textures.metal} accent={accent} color={color} />;
-  return <ScoutStatue texture={textures.body} cloth={textures.cloth} accent={accent} />;
+  return (
+    <sprite raycast={passThroughRaycast} position={[0, 1.12, 0]} scale={[0.92, 1.2, 1]}>
+      <spriteMaterial map={texture} transparent alphaTest={0.04} depthWrite={false} />
+    </sprite>
+  );
 }
 
 export function Piece3D({ color, role, worldPosition, selected = false, formation = false }: Piece3DProps) {
-  const groupRef = useRef<Group>(null);
-  const palette = rolePalette[role];
-  const faction = factionMeta(color);
+  const paint = factionPaint(color, role);
   const [x, , z] = worldPosition;
-  const body = color === "BLACK" ? palette.horde : palette.alliance;
-  const accent = color === "BLACK" ? faction.trim : palette.accent;
-  const textures = usePieceTextures(role, color, body, accent);
-
-  useEffect(() => {
-    groupRef.current?.traverse((object) => {
-      object.raycast = () => undefined;
-    });
-  }, []);
 
   return (
-    <group ref={groupRef} position={[x, 0.26, z]} rotation={[0, Math.PI / 4, 0]}>
-      <MiniaturePedestal color={color} accent={accent} selected={selected} formation={formation} texture={textures.stone} />
-      <group position={[0, 0.18, 0]}><ClassSculpture role={role} color={color} body={body} accent={accent} glow={palette.glow} textures={textures} /></group>
-      {formation && <mesh position={[0, 0.33, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.6, 0.72, 56]} /><meshStandardMaterial color={palette.glow} emissive={palette.glow} emissiveIntensity={0.3} transparent opacity={0.86} /></mesh>}
+    <group position={[x, 0.22, z]}>
+      <MiniaturePedestal color={color} accent={paint.trim} selected={selected} formation={formation} />
+      <CharacterStandee role={role} color={color} />
+      {formation && (
+        <mesh raycast={passThroughRaycast} position={[0, 0.33, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.6, 0.72, 56]} />
+          <meshStandardMaterial color={paint.magic} emissive={paint.magic} emissiveIntensity={0.3} transparent opacity={0.86} />
+        </mesh>
+      )}
     </group>
   );
 }
