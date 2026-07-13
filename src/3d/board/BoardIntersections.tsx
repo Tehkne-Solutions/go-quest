@@ -30,33 +30,33 @@ export function BoardIntersection3D({
   return (
     <group position={[x, 0.245, z]}>
       <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.78, 0]}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
         onPointerDown={handlePointerDown}
       >
-        <circleGeometry args={[0.48, 44]} />
-        <meshBasicMaterial transparent opacity={0} />
+        <cylinderGeometry args={[0.58, 0.58, 1.72, 36]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
       <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[0.25, 0.3, 0.12, 36]} />
-        <meshStandardMaterial color="#372d26" roughness={0.88} metalness={0.12} />
+        <cylinderGeometry args={[0.3, 0.36, 0.15, 42]} />
+        <meshStandardMaterial color="#2f2824" roughness={0.9} metalness={0.12} />
       </mesh>
 
       <mesh position={[0, 0.08, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.21, 0.25, 0.08, 36]} />
+        <cylinderGeometry args={[0.25, 0.3, 0.1, 42]} />
         <meshStandardMaterial color="#6c6052" roughness={0.94} metalness={0.04} />
       </mesh>
 
-      <mesh position={[0, 0.135, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.22, isExpected || hovered || isSelected ? 0.32 : 0.26, 40]} />
-        <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={isExpected || hovered ? 0.32 : 0.08} />
+      <mesh position={[0, 0.155, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.24, isExpected || hovered || isSelected ? 0.36 : 0.3, 44]} />
+        <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={isExpected || hovered ? 0.36 : 0.08} />
       </mesh>
 
-      <mesh position={[0, 0.14, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[isExpected || hovered || isSelected ? 0.08 : 0.052, 32]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isExpected || hovered ? 0.45 : 0.1} />
+      <mesh position={[0, 0.165, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[isExpected || hovered || isSelected ? 0.09 : 0.055, 34]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isExpected || hovered ? 0.48 : 0.1} />
       </mesh>
     </group>
   );
